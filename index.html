@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <script>
+        window.addEventListener('error', function(e) {
+            var div = document.createElement('div');
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.width = '100%';
+            div.style.background = 'red';
+            div.style.color = 'white';
+            div.style.zIndex = '999999';
+            div.style.padding = '10px';
+            div.style.fontSize = '12px';
+            div.style.wordBreak = 'break-all';
+            div.innerHTML = '<strong>Error:</strong> ' + e.message + ' <br>at ' + e.filename + ':' + e.lineno;
+            document.body.appendChild(div);
+        });
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AMU TUNE - Suno AI Music Experience (Rhythm Game)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- スマホ縦画面 9:16 コンテナ -->
+    <div class="app-container">
+
+        <!-- 1. 最上部ヘッダー (ブランドロゴ / ステータス / ホームボタン / 設定) -->
+        <header class="top-header">
+            <div class="header-left" style="display: flex; gap: 6px;">
+                <button class="home-btn" id="home-modal-open-btn" style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 20px; color: #fff; font-weight: bold; font-size: 0.78rem; cursor: pointer; box-shadow: 0 0 10px rgba(255,107,0,0.4);">
+                    🏠曲選択
+                </button>
+                <button class="retry-btn" id="retry-game-btn" style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: linear-gradient(135deg, #00e5ff, #0088ff); border: none; border-radius: 20px; color: #fff; font-weight: bold; font-size: 0.78rem; cursor: pointer; box-shadow: 0 0 10px rgba(0,229,255,0.4);">
+                    🔄最初から
+                </button>
+            </div>
+            <div class="header-center">
+                <div class="mode-badge">AMU TUNE</div>
+            </div>
+            <div class="header-right">
+                <div class="user-currency">
+                    <span class="gem-icon">💎</span>
+                    <span class="gem-count">3,450</span>
+                </div>
+                <button class="settings-btn" id="settings-toggle-btn">🔔</button>
+            </div>
+        </header>
+
+        <!-- 2. メインゲームキャンバスエリア (3D / 2D ゲーム画面) -->
+        <main class="game-viewport">
+            <canvas id="game-canvas"></canvas>
+
+            <!-- 3. 左上: リアルタイム称号 ＆ ランクカード -->
+            <div class="hud-panel top-left-panel">
+                <div class="player-avatar">🎧</div>
+                <div class="player-details">
+                    <div class="player-name" id="player-title-display" style="color: #a0a0a0; font-weight: 900; font-size: 0.85rem;">🔰 NOVICE BEATER</div>
+                    <div class="player-meta">
+                        <span class="rank-badge" id="player-rank-badge" style="color: #a0a0a0; font-weight: bold;">RANK C</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 右上: 楽曲・再生状況カード -->
+            <div class="hud-panel top-right-panel" id="song-card-panel">
+                <div class="song-cover-box" id="song-cover-display">🎵</div>
+                <div class="song-info-group">
+                    <div class="song-title-scroll">
+                        <div class="song-title" id="song-title-display">Suno Sunrise</div>
+                    </div>
+                    <div class="song-artist" id="song-artist-display">AI Music Experience</div>
+                    <div class="song-metrics">
+                        <span class="metric-bpm">BPM <span id="bpm-display">128</span></span>
+                        <span class="metric-time"><span id="current-time-display">0:02</span> / <span id="total-time-display">0:45</span></span>
+                    </div>
+                </div>
+                <!-- 楽曲プログレスバー -->
+                <div class="song-progress-track">
+                    <div class="song-progress-fill" id="song-progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- 5. 中央オーバーレイ (スコア / コンボ / 判定ポップアップ) -->
+            <div class="hud-panel middle-right-panel">
+                <div class="score-label">SCORE</div>
+                <div class="score-val" id="score-display">000000</div>
+                <div class="diff-badge-active" id="diff-badge-display">NORMAL</div>
+            </div>
+
+            <div class="combo-container" id="combo-container">
+                <div class="combo-num" id="combo-display">0</div>
+                <div class="combo-text">COMBO</div>
+            </div>
+
+            <!-- 判定エフェクトポップアップ -->
+            <div class="judgment-popup" id="judgment-popup">
+                <span class="judgment-text" id="judgment-text">PERFECT</span>
+            </div>
+
+            <!-- 6. 5-Lane Touch Controls (矢印無しの洗練されたサイバータッチパネル) -->
+            <div class="touch-controls-container" id="touch-controls-container">
+                <div class="touch-lane-btn" id="btn-lane-0"></div>
+                <div class="touch-lane-btn" id="btn-lane-1"></div>
+                <div class="touch-lane-btn" id="btn-lane-2"></div>
+                <div class="touch-lane-btn" id="btn-lane-3"></div>
+                <div class="touch-lane-btn" id="btn-lane-4"></div>
+            </div>
+
+            <!-- 7. 最下部ゲージ (HPヘルス & エナジー) -->
+            <div class="hud-panel bottom-status-panel">
+                <div class="gauge-group hp-gauge-group">
+                    <div class="gauge-header">
+                        <span class="gauge-title">HP</span>
+                        <span class="gauge-val" id="hp-text">100%</span>
+                    </div>
+                    <div class="gauge-bar-track">
+                        <div class="gauge-bar-fill hp-fill" id="hp-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="gauge-group energy-gauge-group">
+                    <div class="gauge-header">
+                        <span class="gauge-title">ENERGY</span>
+                        <span class="gauge-val">40/100</span>
+                    </div>
+                    <div class="gauge-bar-track">
+                        <div class="gauge-bar-fill energy-fill" style="width: 40%;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- 楽曲読み込み / モード選択 モーダル -->
+    <div class="modal-overlay active" id="load-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>⚡ 楽曲データの取り込み・選択</h2>
+                <p>MP3音声とSRT字幕から自動ノーツを生成します</p>
+            </div>
+
+            <div class="modal-body">
+                <!-- モーダルタブ切り替え -->
+                <div class="modal-tabs">
+                    <button class="tab-btn active" data-tab="quick-tab">🚀 クイックスタート</button>
+                    <button class="tab-btn" data-tab="bookmarklet-tab">📌 専用ブックマークレット</button>
+                    <button class="tab-btn" data-tab="demo-tab">🎮 デモ曲で遊ぶ</button>
+                    <button class="tab-btn" data-tab="file-tab">📁 ファイルを選択</button>
+                </div>
+
+                <div class="modal-tab-contents">
+                    <!-- タブ1: 🚀 クイックスタート -->
+                    <div class="tab-content active" id="quick-tab">
+                        <p class="tab-desc">ブックマークレットから連携した楽曲、または選択中の曲ですぐにノーツを自動生成してスタートできます！</p>
+                        
+                        <!-- 難易度設定 & スタートボタン -->
+                        <div class="modal-controls" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                            <div class="diff-selector">
+                                <label style="color: var(--text-muted); font-size: 0.85rem;">難易度:</label>
+                                <div class="diff-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
+                                    <button class="diff-btn" data-diff="EASY">EASY</button>
+                                    <button class="diff-btn active" data-diff="NORMAL">NORMAL</button>
+                                    <button class="diff-btn" data-diff="HARD">HARD</button>
+                                    <button class="diff-btn" data-diff="EXPERT">EXPERT</button>
+                                </div>
+                            </div>
+
+                            <button class="action-btn start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 14px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), var(--gold-accent)); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+                                ⚡ ノーツを自動作成してプレイ！
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- タブ2: 🎮 デモ曲で遊ぶ -->
+                    <div class="tab-content" id="demo-tab">
+                        <p class="tab-desc">用意された合成音源ビート＆SRTデモ楽曲ですぐに遊べます。</p>
+                        <div class="demo-song-list">
+                            <div class="demo-song-card selected" data-demo="suno_sunrise" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,107,0,0.15); border: 1px solid var(--orange-primary); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <div class="demo-cover" style="font-size: 1.8rem;">🌅</div>
+                                <div class="demo-info">
+                                    <div class="demo-title" style="font-weight: bold; color: #fff;">Suno Sunrise (Cyber Beat)</div>
+                                    <div class="demo-meta" style="font-size: 0.8rem; color: var(--text-muted);">128 BPM • Synth Wave • Auto Chart</div>
+                                </div>
+                            </div>
+                            <div class="demo-song-card" data-demo="neon_drive" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(20,20,30,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer;">
+                                <div class="demo-cover" style="font-size: 1.8rem;">🏙️</div>
+                                <div class="demo-info">
+                                    <div class="demo-title" style="font-weight: bold; color: #fff;">Neon Drive (Speed Vocal)</div>
+                                    <div class="demo-meta" style="font-size: 0.8rem; color: var(--text-muted);">145 BPM • Cyber Bass • Auto Chart</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- タブ3: 📁 ファイルを選択 -->
+                    <div class="tab-content" id="file-tab">
+                        <p class="tab-desc">お持ちの <strong>.mp3 / .wav 音声ファイル</strong> と <strong>.srt 字幕ファイル</strong> を選択、またはドラッグ＆ドロップしてください。</p>
+
+                        <div class="drop-zone" id="drop-zone">
+                            <div class="drop-zone-icon">📁</div>
+                            <div class="drop-zone-text">MP3音源 & SRT字幕をドラッグ＆ドロップ</div>
+                            <div class="drop-zone-sub">または下のボタンから選択</div>
+                            
+                            <div class="file-inputs">
+                                <label class="file-btn">
+                                    🎵 MP3音声を選択
+                                    <input type="file" id="mp3-input" accept="audio/*">
+                                </label>
+                                <label class="file-btn secondary">
+                                    📝 SRT字幕を選択 (任意)
+                                    <input type="file" id="srt-input" accept=".srt,.txt">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="file-status" id="file-status-display">
+                            <div id="mp3-status">MP3: 未選択</div>
+                            <div id="srt-status">SRT: 未選択 (※未選択時は音響ビート解析のみで生成)</div>
+                        </div>
+                    </div>
+
+                    <!-- タブ4: 📌 専用ブックマークレット -->
+                    <div class="tab-content" id="bookmarklet-tab">
+                        <p class="tab-desc">Sunoの再生ページで実行すると、再生中の楽曲を全自動で取得し、<strong>直接 AMU TUNE へ画面移動してノーツを作成・スタート</strong>します！</p>
+
+                        <div class="bookmarklet-box">
+                            <div class="code-wrapper">
+                                <textarea id="bookmarklet-code" readonly style="width: 100%; height: 70px; background: rgba(0,0,0,0.5); color: #00e5ff; border: 1px solid var(--orange-primary); border-radius: 6px; font-family: monospace; font-size: 0.75rem; padding: 8px;"></textarea>
+                            </div>
+                            <button class="action-btn copy-btn" id="copy-bookmarklet-btn" style="width: 100%; margin-top: 8px;">⚡ 専用ブックマークレットをコピー</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSモジュールロード -->
+    <script src="js/srtParser.js?v=22"></script>
+    <script src="js/audioAnalyzer.js?v=22"></script>
+    <script src="js/gameEngine.js?v=22"></script>
+    <script src="js/uiManager.js?v=22"></script>
+    <script src="js/bookmarkletHelper.js?v=22"></script>
+    <script src="js/app.js?v=22"></script>
+</body>
+</html>

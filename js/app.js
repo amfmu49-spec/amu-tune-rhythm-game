@@ -1,0 +1,391 @@
+/**
+ * AMU TUNE Main Application Coordinator
+ * 100%エラーレス・安全な初期化とホーム画面（モーダル）相互切り替えバインド
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // コンポーネント初期化
+    const srtParser = new SRTParser();
+    const audioAnalyzer = new AudioAnalyzer();
+    const gameEngine = new GameEngine('game-canvas', audioAnalyzer);
+    const ui = new UIManager(gameEngine);
+
+    // ゲームエンジンからUIマネージャーへのコールバックバインド (コンボ、スコア、HP、判定リアルタイム更新)
+    gameEngine.onScoreUpdate = (score) => ui.updateScore(score);
+    gameEngine.onComboUpdate = (combo) => ui.updateCombo(combo);
+    gameEngine.onHpUpdate = (hp) => ui.updateHp(hp);
+    gameEngine.onProgressUpdate = (cur, tot) => ui.updateSongProgress(cur, tot);
+    gameEngine.onJudgment = (res) => ui.showJudgment(res);
+
+    let uploadedMp3Buffer = null;
+    let uploadedSrtText = null;
+    let pendingExternalLoad = false; // ブックマークレット連携中はデモフォールバックを防ぐ
+
+    // カバーアート表示の更新ヘルパー
+    const setSongCoverArt = (coverUrl) => {
+        const display = document.getElementById('song-cover-display');
+        const songCard = document.getElementById('song-card-panel');
+        if (display && coverUrl) {
+            display.style.backgroundImage = `url(${coverUrl})`;
+            display.style.backgroundSize = 'cover';
+            display.style.backgroundPosition = 'center';
+            display.textContent = '';
+        }
+    };
+
+    // ==========================================================================
+    // UIイベントバインド (オプショナルチェイニングで100%安全保護)
+    // ==========================================================================
+
+    // 🏠 HOME / 曲選択ボタン
+    document.getElementById('home-modal-open-btn')?.addEventListener('click', () => {
+        if (gameEngine.isPlaying) {
+            gameEngine.pause();
+        }
+        ui.showLoadModal();
+    });
+
+    // 🔄 最初からやり直すボタン
+    document.getElementById('retry-game-btn')?.addEventListener('click', () => {
+        gameEngine.restart();
+    });
+
+    // ⚡ クリップボードからワンタップ取り込みボタン
+    document.getElementById('clipboard-import-btn')?.addEventListener('click', async () => {
+        try {
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    await processImportedString(text);
+                } else {
+                    alert('クリップボードが空です。音楽生成ページでURLや一括データをコピーしてからお試しください。');
+                }
+            } else {
+                alert('お使いのブラウザではクリップボード自動読み取りが制限されています。「URL入力」欄へ貼り付けてください。');
+            }
+        } catch (err) {
+            alert('クリップボード読み取り許可が必要です。URL入力欄へ貼り付けて「読み込み」を押してください。');
+        }
+    });
+
+    // 直接URL入力送信ボタン
+    document.getElementById('direct-url-submit-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('direct-url-input');
+        if (input && input.value.trim()) {
+            await processImportedString(input.value.trim());
+        }
+    });
+
+    // デモ曲選択カード
+    document.querySelectorAll('.demo-song-card').forEach(card => {
+        card.addEventListener('click', async () => {
+            document.querySelectorAll('.demo-song-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+
+            const demoKey = card.getAttribute('data-demo');
+            if (demoKey === 'suno_sunrise' || demoKey === 'neon_drive') {
+                document.getElementById('song-title-display').textContent = (demoKey === 'suno_sunrise') ? 'Suno Sunrise (Cyber Beat)' : 'Neon Drive (Speed Vocal)';
+                document.getElementById('song-artist-display').textContent = 'AI Music Experience';
+
+                uploadedMp3Buffer = audioAnalyzer.createDemoAudioBuffer();
+                uploadedSrtText = SRTParser.createDemoSRTText();
+            }
+        });
+    });
+
+    // MP3ファイル入力
+    document.getElementById('mp3-input')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                uploadedMp3Buffer = await audioAnalyzer.decodeAudio(arrayBuffer);
+                
+                const id3Cover = AudioAnalyzer.extractCoverArtFromBuffer(arrayBuffer);
+                if (id3Cover) setSongCoverArt(id3Cover);
+
+                const titleDisp = document.getElementById('song-title-display');
+                if (titleDisp) titleDisp.textContent = file.name.replace(/\.[^/.]+$/, "");
+                
+                const mp3Status = document.getElementById('mp3-status');
+                if (mp3Status) mp3Status.textContent = `MP3: ${file.name} ✔`;
+            } catch (err) {
+                alert('MP3ファイルの読み込みに失敗しました: ' + err.message);
+            }
+        }
+    });
+
+    // SRTファイル入力
+    document.getElementById('srt-input')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                uploadedSrtText = await file.text();
+                const srtStatus = document.getElementById('srt-status');
+                if (srtStatus) srtStatus.textContent = `SRT: ${file.name} ✔`;
+            } catch (err) {
+                alert('SRTファイルの読み込みに失敗しました: ' + err.message);
+            }
+        }
+    });
+
+    // ゲーム開始ボタン
+    document.getElementById('start-game-btn')?.addEventListener('click', () => {
+        // 外部連携ロード中はこのハンドラーを完全スキップ（onclick側が処理する）
+        if (pendingExternalLoad) return;
+
+        if (!uploadedMp3Buffer) {
+            uploadedMp3Buffer = audioAnalyzer.createDemoAudioBuffer();
+            uploadedSrtText = SRTParser.createDemoSRTText();
+        }
+
+        const diff = ui.selectedDifficulty || 'NORMAL';
+        const srtEntries = uploadedSrtText ? SRTParser.parse(uploadedSrtText) : [];
+        const chart = audioAnalyzer.generateChart(uploadedMp3Buffer, srtEntries, diff);
+
+        gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff);
+        ui.hideLoadModal();
+        gameEngine.play();
+    });
+
+    // ブックマークレットコードコピーボタン
+    document.getElementById('copy-bookmarklet-btn')?.addEventListener('click', async () => {
+        const bCode = BookmarkletHelper.getBookmarkletCode();
+        let success = false;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(bCode);
+                success = true;
+            }
+        } catch(err) {
+            console.warn('Clipboard API failed, trying fallback.');
+        }
+
+        if (!success) {
+            try {
+                const textArea = document.getElementById('bookmarklet-code');
+                if (textArea) {
+                    textArea.select();
+                    textArea.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+                    success = true;
+                }
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+        }
+
+        if (success) {
+            alert('⚡ ブックマークレットをクリップボードにコピーしました！\nブラウザのブックマーク（お気に入り）に登録してお使いください。');
+        } else {
+            alert('コードの自動コピーに失敗しました。\nお手数ですが上のテキストエリアの文字を手動で全選択してコピーしてください。');
+        }
+    });
+
+    // CORS回避のためのプロキシ順次フォールバック関数
+    const fetchWithProxy = async (url) => {
+        const proxies = [
+            // Cloudflare Workers 本番超高速CORSプロキシ (セキュリティ保護・永久無料)
+            target => `https://morning-disk-d1b0.jbk249pkhk.workers.dev/?url=${encodeURIComponent(target)}`,
+            // ローカルCORSプロキシ
+            target => `/proxy?url=${encodeURIComponent(target)}`,
+            // 直接フェッチ（念のため）
+            target => target,
+            // パブリックプロキシ群（フォールバック）
+            target => `https://corsproxy.io/?url=${encodeURIComponent(target)}`,
+            target => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+        ];
+
+        let lastError = null;
+        for (let i = 0; i < proxies.length; i++) {
+            const getProxyUrl = proxies[i];
+            try {
+                const proxyUrl = getProxyUrl(url);
+                console.log(`[CORS Proxy Try ${i+1}] Fetching: ${proxyUrl.substring(0,80)}`);
+                const res = await fetch(proxyUrl, { mode: i === 0 ? 'cors' : 'cors' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const arrayBuffer = await res.arrayBuffer();
+                if (arrayBuffer.byteLength < 10000) {
+                    throw new Error(`Downloaded data too small (${arrayBuffer.byteLength} bytes), likely an error page.`);
+                }
+                console.log(`[CORS Proxy Try ${i+1}] SUCCESS: ${arrayBuffer.byteLength} bytes`);
+                return arrayBuffer;
+            } catch (err) {
+                console.warn(`[CORS Proxy Try ${i+1} Failed]:`, err.message);
+                lastError = err;
+            }
+        }
+        throw new Error(`全てのCORSプロキシ経由でのフェッチに失敗しました。最終エラー: ${lastError?.message}`);
+    };
+
+    // ==========================================================================
+    // 汎用文字列（JSON・URL・共有テキスト）取り込み処理
+    // ==========================================================================
+    const processImportedString = async (str) => {
+        try {
+            let data = null;
+            if (str.startsWith('{') && str.endsWith('}')) {
+                data = JSON.parse(str);
+            } else if (str.includes('mp3Url')) {
+                const match = str.match(/\{.*mp3Url.*\}/);
+                if (match) data = JSON.parse(match[0]);
+            } else if (str.startsWith('http')) {
+                data = { mp3Url: str, title: 'URL Track' };
+            }
+
+            if (data) {
+                if (data.title) document.getElementById('song-title-display').textContent = data.title;
+                if (data.coverUrl) setSongCoverArt(data.coverUrl);
+                if (data.srtText) uploadedSrtText = data.srtText;
+
+                if (data.mp3Url) {
+                    // CORS回避プロキシフォールバック経由でMP3をダウンロード
+                    const arrayBuffer = await fetchWithProxy(data.mp3Url);
+                    uploadedMp3Buffer = await audioAnalyzer.decodeAudio(arrayBuffer);
+
+                    const id3Cover = AudioAnalyzer.extractCoverArtFromBuffer(arrayBuffer);
+                    if (id3Cover) setSongCoverArt(id3Cover);
+
+                    // オートプレイ制限（iOS等の音出ない問題）を回避するため、
+                    // 即時開始はせず、モーダルのスタートボタン（ユーザーの直接タップ）を促す
+                    const mp3Status = document.getElementById('mp3-status');
+                    if (mp3Status) mp3Status.textContent = `MP3: 外部連携ロード完了 ✔`;
+                    
+                    const titleDisp = document.getElementById('song-title-display');
+                    if (titleDisp && data.title) titleDisp.textContent = data.title;
+                    
+                    // 開始待機状態にするためにモーダルを表示
+                    ui.showLoadModal();
+                    
+                    // ボタンのテキストを促す表示に変更
+                    const startBtn = document.getElementById('start-game-btn');
+                    if (startBtn) {
+                        startBtn.innerHTML = `⚡ 連携曲「${data.title}」をプレイ！`;
+                        startBtn.style.background = 'linear-gradient(135deg, #00e5ff, var(--orange-primary))';
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            const startBtn = document.getElementById('start-game-btn');
+            if (startBtn) {
+                const triedUrl = (data && data.mp3Url) ? (data.mp3Url.substring(0, 35) + "...") : "No URL";
+                startBtn.innerHTML = `❌ ロード失敗 [${triedUrl}]: ${err.message}`;
+                startBtn.style.background = 'red';
+            }
+            const mp3Status = document.getElementById('mp3-status');
+            if (mp3Status) mp3Status.textContent = `MP3: 読み込み失敗 ❌`;
+            alert('データの取り込み中にエラーが発生しました: ' + err.message);
+        }
+    };
+
+    // ブックマークレットコードのテキストエリアセット
+    const bookmarkletTextArea = document.getElementById('bookmarklet-code');
+    if (bookmarkletTextArea) {
+        bookmarkletTextArea.value = BookmarkletHelper.getBookmarkletCode();
+    }
+
+    // ==========================================================================
+    // データ自動判定（URLハッシュ or SessionStorage）
+    // ==========================================================================
+    const checkImportedBookmarkletData = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const uuid = urlParams.get('mp3uuid');
+        if (!uuid) return;
+
+        // URLをきれいにする
+        window.history.replaceState(null, null, window.location.pathname);
+
+        const mp3Url = 'https://cdn1.suno.ai/' + uuid + '.mp3';
+        console.log('[AMU TUNE] Loading UUID:', uuid, 'URL:', mp3Url);
+
+        // 外部ロード開始フラグ（addEventListener側のデモフォールバックを防ぐ）
+        pendingExternalLoad = true;
+
+        // ボタンをロード中表示（アニメーション付き）
+        const startBtn = document.getElementById('start-game-btn');
+        if (startBtn) {
+            startBtn.innerHTML = '⏳ 楽曲を読み込み中 0%';
+            startBtn.style.background = 'linear-gradient(135deg, #444, #777)';
+            startBtn.disabled = true;
+        }
+        ui.showLoadModal();
+
+        // 進捗アニメ（実際のサイズが不明なので推定アニメ）
+        let fakePct = 0;
+        const progressInterval = setInterval(() => {
+            if (fakePct < 85) {
+                fakePct += (85 - fakePct) * 0.05 + 0.5;
+                if (startBtn) startBtn.innerHTML = `⏳ ダウンロード中 ${Math.round(fakePct)}%`;
+            }
+        }, 300);
+
+        try {
+            // フェーズ1: MP3のダウンロードのみ（AudioContextは使わない）
+            const rawArrayBuffer = await fetchWithProxy(mp3Url);
+            clearInterval(progressInterval);
+            if (startBtn) startBtn.innerHTML = '⏳ ダウンロード完了！';
+
+            // フェーズ2: ユーザーのタップをトリガーにしてデコード＆開始
+            // （iOSのAudioContext制限のため、必ずユーザーのジェスチャーが必要）
+            if (startBtn) {
+                startBtn.innerHTML = '⚡ タップして曲を開始！';
+                startBtn.style.background = 'linear-gradient(135deg, #00e5ff, var(--orange-primary))';
+                startBtn.style.color = '#000';
+                startBtn.disabled = false;
+
+                // 既存のリスナーを上書きしないようonclickで登録
+                startBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    e.stopImmediatePropagation(); // 同じボタンの他のhandler(addEventListener)を完全ブロック
+                    startBtn.innerHTML = '⏳ デコード中...';
+                    startBtn.disabled = true;
+                    try {
+                        // ユーザーのタップ内でAudioContextをresumeしてからデコード（iOS必須）
+                        if (audioAnalyzer.audioCtx.state === 'suspended') {
+                            await audioAnalyzer.audioCtx.resume();
+                        }
+                        uploadedMp3Buffer = await audioAnalyzer.audioCtx.decodeAudioData(rawArrayBuffer);
+
+                        // デコード成功
+                        pendingExternalLoad = false;
+                        startBtn.onclick = null;
+                        startBtn.disabled = false;
+                        const diff = ui.selectedDifficulty || 'NORMAL';
+                        const srtEntries = uploadedSrtText ? SRTParser.parse(uploadedSrtText) : [];
+                        const chart = audioAnalyzer.generateChart(uploadedMp3Buffer, srtEntries, diff);
+                        gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff);
+                        ui.hideLoadModal();
+                        gameEngine.play();
+                    } catch (decodeErr) {
+                        pendingExternalLoad = false;
+                        startBtn.innerHTML = '❌ デコード失敗: ' + decodeErr.message.substring(0, 40);
+                        startBtn.style.background = 'red';
+                        startBtn.disabled = false;
+                    }
+                };
+            }
+
+            const id3Cover = AudioAnalyzer.extractCoverArtFromBuffer(rawArrayBuffer);
+            if (id3Cover) setSongCoverArt(id3Cover);
+
+            // カバーアート取得後はstartBtnはすでに上で設定済み
+        } catch (err) {
+            pendingExternalLoad = false;
+            clearInterval(progressInterval);
+            console.error('[AMU TUNE] Load error:', err);
+            if (startBtn) {
+                startBtn.innerHTML = '❌ 失敗: ' + err.message.substring(0, 50);
+                startBtn.style.background = 'red';
+                startBtn.disabled = false;
+            }
+        }
+    };
+
+    // 初期化実行
+    checkImportedBookmarkletData();
+    window.addEventListener('hashchange', checkImportedBookmarkletData);
+    
+    // 初回起動時にホーム画面（楽曲選択モーダル）を確実に表示
+    ui.showLoadModal();
+});

@@ -1,0 +1,1105 @@
+/* ==========================================================================
+   AMU TUNE - Cyber Neon Theme & Rhythm Game Styling
+   ========================================================================== */
+
+:root {
+    --bg-dark: #0b0c10;
+    --panel-bg: rgba(22, 24, 30, 0.85);
+    --panel-border: rgba(255, 120, 0, 0.25);
+    --panel-border-bright: rgba(255, 140, 0, 0.7);
+    --orange-primary: #ff6b00;
+    --orange-bright: #ff8c00;
+    --orange-glow: rgba(255, 107, 0, 0.6);
+    --gold-accent: #ffb700;
+    --text-white: #f0f2f8;
+    --text-muted: #8e96a7;
+    --font-heading: 'Orbitron', 'Rajdhani', sans-serif;
+    --font-body: 'Rajdhani', 'Noto Sans JP', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    font-family: var(--font-body);
+    color: var(--text-white);
+    touch-action: manipulation;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    max-width: 480px; /* 9:16 スマートフォン縦画面の標準幅 */
+    margin: 0 auto;
+    background: radial-gradient(circle at center, #1b1d28 0%, #08090d 100%);
+    position: relative;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+}
+
+/* ==========================================================================
+   Top Header Component
+   ========================================================================== */
+.top-header {
+    height: 54px;
+    background: rgba(15, 16, 22, 0.9);
+    border-bottom: 1px solid rgba(255, 107, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 20;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.header-left .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-icon {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 24px;
+}
+
+.logo-icon span {
+    width: 4px;
+    background: linear-gradient(to top, var(--orange-primary), var(--gold-accent));
+    border-radius: 2px;
+    animation: eq-bounce 1.2s infinite ease-in-out alternate;
+}
+
+.logo-icon span:nth-child(1) { height: 12px; animation-delay: 0.1s; }
+.logo-icon span:nth-child(2) { height: 20px; animation-delay: 0.3s; }
+.logo-icon span:nth-child(3) { height: 24px; animation-delay: 0.0s; }
+.logo-icon span:nth-child(4) { height: 16px; animation-delay: 0.4s; }
+.logo-icon span:nth-child(5) { height: 10px; animation-delay: 0.2s; }
+
+@keyframes eq-bounce {
+    0% { transform: scaleY(0.4); }
+    100% { transform: scaleY(1); }
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-text .main-title {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 1.2rem;
+    letter-spacing: 1.5px;
+    background: linear-gradient(45deg, #ffffff, var(--orange-bright));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.logo-text .sub-title {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.header-center .mode-badge {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(255, 107, 0, 0.15);
+    border: 1px solid var(--orange-primary);
+    color: var(--orange-bright);
+    letter-spacing: 1px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.plus-btn {
+    color: var(--orange-bright);
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+.icon-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-white);
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover, .icon-btn:active {
+    background: var(--orange-primary);
+    border-color: var(--gold-accent);
+}
+
+.icon-btn .badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ff3b3b;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: bold;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   Main Game Viewport & Canvas Wrapper
+   ========================================================================== */
+.game-viewport {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 54px);
+    overflow: hidden;
+}
+
+.canvas-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ==========================================================================
+   Judgment & Combo Display Overlay
+   ========================================================================== */
+.judgment-display {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-heading);
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.judgment-display.pop {
+    animation: judge-pop 0.35s ease-out forwards;
+}
+
+.judgment-display.perfect {
+    color: #ffaa00;
+    text-shadow: 0 0 15px rgba(255, 170, 0, 0.8), 0 0 30px rgba(255, 107, 0, 0.6);
+}
+
+.judgment-display.great {
+    color: #00e5ff;
+    text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
+}
+
+.judgment-display.good {
+    color: #76ff03;
+    text-shadow: 0 0 15px rgba(118, 255, 3, 0.8);
+}
+
+.judgment-display.miss {
+    color: #ff1744;
+    text-shadow: 0 0 15px rgba(255, 23, 68, 0.8);
+}
+
+@keyframes judge-pop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+.combo-container {
+    position: absolute;
+    top: 32%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 10;
+    width: 140px;
+    height: 140px;
+    justify-content: center;
+}
+
+/* 背後に回転するサイバーネオンサークル */
+.combo-container::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px dashed rgba(0, 229, 255, 0.35);
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.15), inset 0 0 15px rgba(0, 229, 255, 0.15);
+    animation: combo-ring-spin 10s linear infinite;
+    z-index: -1;
+}
+
+/* 内側のセカンダリサークル */
+.combo-container::after {
+    content: '';
+    position: absolute;
+    width: 82%;
+    height: 82%;
+    border: 1px solid rgba(255, 107, 0, 0.25);
+    border-radius: 50%;
+    animation: combo-ring-spin-reverse 15s linear infinite;
+    z-index: -1;
+}
+
+.combo-text {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    color: var(--orange-bright);
+    text-shadow: 0 0 10px var(--orange-glow);
+    margin-top: 4px;
+}
+
+.combo-num {
+    font-family: var(--font-heading);
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 0 20px var(--orange-glow), 0 4px 10px rgba(0,0,0,0.9);
+}
+
+.combo-container.bounce {
+    animation: combo-bounce 0.15s ease-out;
+}
+
+@keyframes combo-ring-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes combo-ring-spin-reverse {
+    0% { transform: rotate(360deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@keyframes combo-bounce {
+    0% { transform: translate(-50%, -50%) scale(1.25); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ==========================================================================
+   UI Overlay Panels (Image 2 Replica)
+   ========================================================================== */
+.hud-panel {
+    position: absolute;
+    z-index: 10;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 0 8px rgba(255, 107, 0, 0.15);
+    border-left: 3px solid var(--orange-primary);
+}
+
+/* 1. Top Left Panel */
+.top-left-panel {
+    top: 10px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+}
+
+.player-avatar {
+    width: 34px;
+    height: 34px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--orange-bright);
+}
+
+.player-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.player-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.rank-badge {
+    color: var(--gold-accent);
+    font-weight: bold;
+}
+
+/* 2. Top Right Panel */
+.top-right-panel {
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 170px;
+    max-width: 210px;
+    padding: 6px 10px;
+}
+
+.song-cover {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+}
+
+.cover-art {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #ff512f, #dd2476);
+    position: relative;
+}
+
+.sun-graphic {
+    width: 24px;
+    height: 24px;
+    background: #ffb700;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 12px #ffaa00;
+}
+
+.song-meta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.song-title {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.song-artist {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.song-bpm-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--orange-bright);
+    font-family: var(--font-heading);
+    margin-top: 2px;
+}
+
+.song-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--orange-primary), var(--gold-accent));
+    transition: width 0.1s linear;
+}
+
+/* 3. Middle Left Panel (Ranking) */
+.middle-left-panel {
+    top: 90px;
+    left: 16px;
+    width: 180px;
+}
+
+.panel-header-tab {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--orange-bright);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+}
+
+.ranking-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rank-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+}
+
+.rank-item.top1 {
+    background: rgba(255, 183, 0, 0.15);
+    border: 1px solid rgba(255, 183, 0, 0.4);
+}
+
+.rank-item.active-user {
+    background: rgba(255, 107, 0, 0.2);
+    border: 1px solid var(--orange-primary);
+}
+
+.rank-num {
+    font-weight: bold;
+    width: 14px;
+}
+
+.rank-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rank-score {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* 4. Middle Right Panel (Score & Diff) */
+.middle-right-panel {
+    top: 70px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+    padding: 6px 10px;
+    background: rgba(22, 24, 30, 0.7);
+}
+
+.score-box {
+    text-align: right;
+}
+
+.score-label {
+    font-family: var(--font-heading);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.score-value {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--gold-accent);
+    text-shadow: 0 0 10px rgba(255, 183, 0, 0.4);
+}
+
+.diff-badge {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: var(--orange-primary);
+    color: #fff;
+}
+
+/* 5. Bottom Left Panel (HP / Energy) */
+.bottom-left-panel {
+    bottom: 80px;
+    left: 16px;
+    width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gauge-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gauge-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    font-family: var(--font-heading);
+}
+
+.gauge-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hp-fill {
+    background: linear-gradient(90deg, #ff3b3b, #ff8c00);
+}
+
+.energy-fill {
+    background: linear-gradient(90deg, #ffaa00, #ffee55);
+}
+
+/* 6. Touch Lane Controls Container (5 Lanes Perfectly Aligned) */
+.touch-controls-container {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    height: 105px;
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 0 8px 10px 8px;
+    z-index: 20;
+}
+
+.touch-lane-btn {
+    flex: 1;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.18), rgba(15, 17, 24, 0.95));
+    border: 2px solid var(--orange-primary);
+    border-radius: 8px 8px 14px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255, 107, 0, 0.35), inset 0 2px 8px rgba(255, 183, 0, 0.3);
+    transition: transform 0.05s ease, background 0.05s ease, box-shadow 0.05s ease;
+    touch-action: manipulation;
+    position: relative;
+    overflow: hidden;
+}
+
+.touch-lane-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    width: 80%;
+    height: 4px;
+    background: #ffaa00;
+    border-radius: 2px;
+    box-shadow: 0 0 8px #ffaa00;
+}
+
+.touch-lane-btn:nth-child(even) {
+    border-color: #ffaa00;
+    background: linear-gradient(to bottom, rgba(255, 170, 0, 0.18), rgba(15, 17, 24, 0.95));
+}
+
+.touch-lane-btn:nth-child(even)::after {
+    background: #00e5ff;
+    box-shadow: 0 0 8px #00e5ff;
+}
+
+.touch-lane-btn:active, .touch-lane-btn.active {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), var(--orange-bright));
+    box-shadow: 0 0 35px #ffaa00, inset 0 0 20px #ffffff;
+    transform: translateY(3px) scale(0.96);
+}
+
+/* 7. Bottom Controls Panel */
+.bottom-controls-panel {
+    display: none; /* スマホ縦画面での視界確保のため隠す */
+}
+
+.ctrl-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.ctrl-btn.primary-ctrl {
+    background: var(--orange-primary);
+    border-color: var(--gold-accent);
+}
+
+.ctrl-btn:hover, .ctrl-btn:active {
+    transform: scale(1.05);
+}
+
+/* ==========================================================================
+   Modals & Overlays (ホーム画面・楽曲選択モーダル)
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(11, 12, 16, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.modal-overlay.active {
+    display: flex !important;
+}
+
+.modal-card {
+    width: 100%;
+    max-width: 440px;
+    background: linear-gradient(145deg, #14161f, #1a1d29);
+    border: 2px solid var(--orange-primary);
+    border-radius: 16px;
+    box-shadow: 0 0 40px rgba(255, 107, 0, 0.4), inset 0 0 15px rgba(255, 170, 0, 0.15);
+    padding: 20px;
+    color: #fff;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 580px;
+    max-height: 90vh;
+    background: #14161e;
+    border: 1px solid var(--panel-border-bright);
+    border-radius: 16px;
+    box-shadow: 0 10px 50px rgba(255, 107, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: var(--orange-bright);
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 8px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background: rgba(255, 107, 0, 0.2);
+    border-color: var(--orange-primary);
+    color: var(--orange-bright);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tab-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Presets */
+.preset-song-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preset-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preset-card.selected {
+    border-color: var(--orange-primary);
+    background: rgba(255, 107, 0, 0.15);
+}
+
+.preset-icon {
+    font-size: 1.5rem;
+}
+
+.preset-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.preset-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* File Drop Zone */
+.drop-zone {
+    border: 2px dashed rgba(255, 107, 0, 0.4);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    background: rgba(255, 107, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.drop-icon { font-size: 2.2rem; }
+
+.file-inputs {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.file-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.file-btn input[type="file"] {
+    display: none;
+}
+
+.file-status {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--orange-bright);
+}
+
+/* Bookmarklet Box */
+.bookmarklet-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.code-wrapper textarea {
+    width: 100%;
+    height: 70px;
+    background: #090a0d;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #00e5ff;
+    font-family: monospace;
+    font-size: 0.7rem;
+    padding: 8px;
+    border-radius: 6px;
+    resize: none;
+}
+
+.howto-list {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Difficulty Section */
+.diff-select-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 14px;
+}
+
+.section-label {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    color: var(--orange-bright);
+}
+
+.diff-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.diff-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 4px;
+    border-radius: 8px;
+    color: var(--text-white);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.diff-btn.active {
+    background: var(--orange-primary);
+    border-color: var(--gold-accent);
+    box-shadow: 0 0 12px var(--orange-glow);
+}
+
+.diff-name {
+    font-family: var(--font-heading);
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.diff-stars {
+    font-size: 0.65rem;
+    color: var(--gold-accent);
+}
+
+.modal-footer {
+    padding: 14px 20px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.action-btn {
+    background: var(--orange-primary);
+    border: 1px solid var(--gold-accent);
+    color: #fff;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.9rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px var(--orange-glow);
+}
+
+.action-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: none;
+}
+
+/* Result Modal */
+.result-content {
+    text-align: center;
+}
+
+.result-header {
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(255, 107, 0, 0.3), transparent);
+}
+
+.result-title {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    letter-spacing: 3px;
+    color: var(--orange-bright);
+}
+
+.result-rank {
+    font-family: var(--font-heading);
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: var(--gold-accent);
+    text-shadow: 0 0 30px var(--gold-accent);
+    margin-top: 4px;
+}
+
+.result-stats {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 6px;
+}
+
+.stat-val.highlight {
+    color: var(--gold-accent);
+    font-weight: bold;
+}
+
+.judgment-counts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    font-size: 0.8rem;
+    font-family: var(--font-heading);
+    margin-top: 10px;
+}
+
+.j-count.perfect { color: var(--gold-accent); }
+.j-count.great { color: #00e5ff; }
+.j-count.good { color: #76ff03; }
+.j-count.miss { color: #ff1744; }
+
+/* ==========================================================================
+   Responsive adjustments (Mobile Portrait & Small Screens)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .middle-left-panel, .bottom-left-panel {
+        display: none; /* スマホ画面の視界確保のため一部UIを畳む */
+    }
+
+    .top-left-panel {
+        padding: 6px 10px;
+    }
+    .player-avatar { width: 32px; height: 32px; }
+    .player-name { font-size: 0.8rem; }
+    .player-rank-row { font-size: 0.65rem; }
+
+    .top-right-panel {
+        min-width: 180px;
+        padding: 6px 10px;
+    }
+
+    .touch-controls-container {
+        height: 110px; /* タップしやすく縦幅拡張 */
+        padding-bottom: 14px;
+    }
+}
