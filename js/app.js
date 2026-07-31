@@ -49,6 +49,22 @@ document.addEventListener('DOMContentLoaded', () => {
         gameEngine.restart();
     });
 
+    // 🔗 Suno 楽曲URL / UUID 直接入力＆読み込みボタン
+    document.getElementById('suno-url-load-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('suno-url-input');
+        if (!input || !input.value.trim()) {
+            alert('Sunoの楽曲URLまたは楽曲ID(UUID)を入力してください。');
+            return;
+        }
+        const val = input.value.trim();
+        const uuidMatch = val.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (uuidMatch) {
+            await loadByUuid(uuidMatch[0]);
+        } else {
+            alert('有効なSuno楽曲URLまたはUUIDが見つかりませんでした。\n例: https://suno.com/song/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+        }
+    });
+
     // ⚡ クリップボードからワンタップ取り込みボタン
     document.getElementById('clipboard-import-btn')?.addEventListener('click', async () => {
         try {
@@ -286,16 +302,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // データ自動判定（URLハッシュ or SessionStorage）
+    // UUID指定での楽曲自動ロード共通処理
     // ==========================================================================
-    const checkImportedBookmarkletData = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const uuid = urlParams.get('mp3uuid');
-        if (!uuid) return;
-
-        // URLをきれいにする
-        window.history.replaceState(null, null, window.location.pathname);
-
+    const loadByUuid = async (uuid) => {
         const mp3Url = 'https://cdn1.suno.ai/' + uuid + '.mp3';
         console.log('[AMU TUNE] Loading UUID:', uuid, 'URL:', mp3Url);
 
@@ -380,6 +389,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 startBtn.disabled = false;
             }
         }
+    };
+
+    const checkImportedBookmarkletData = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const uuid = urlParams.get('mp3uuid');
+        if (!uuid) return;
+
+        // URLをきれいにする
+        window.history.replaceState(null, null, window.location.pathname);
+        await loadByUuid(uuid);
     };
 
     // 初期化実行

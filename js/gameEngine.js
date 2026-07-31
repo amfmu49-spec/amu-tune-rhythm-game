@@ -171,8 +171,17 @@ class GameEngine {
     }
 
     // ==========================================================================
-    // 入力処理（キーボード ＆ タッチ）
+    // 入力処理（キーボード ＆ レール全域スライド・タップ対応）
     // ==========================================================================
+    getLaneFromX(clientX) {
+        const rect = this.canvas.getBoundingClientRect();
+        const relativeX = clientX - rect.left;
+        if (relativeX < 0 || relativeX > rect.width) return -1;
+        const laneWidth = rect.width / this.lanesCount;
+        const lane = Math.floor(relativeX / laneWidth);
+        return Math.max(0, Math.min(this.lanesCount - 1, lane));
+    }
+
     setupKeyAndTouchInput() {
         const keyMap = {
             'KeyD': 0, 'ArrowLeft': 0,
@@ -193,42 +202,106 @@ class GameEngine {
             if (lane !== undefined) this.triggerLaneRelease(lane);
         });
 
-        // タッチとマウス入力のバインディング (スマホマルチタッチ対応＆PCマウス対応)
-        for (let lane = 0; lane < this.lanesCount; lane++) {
-            const btn = document.getElementById(`btn-lane-${lane}`);
-            if (btn) {
-                // タッチイベント
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.triggerLanePress(lane);
-                }, { passive: false });
+        // 現在のアクティブなタッチID -> レール番号のマップ
+        const activeTouchLanes = new Map();
 
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.triggerLaneRelease(lane);
-                }, { passive: false });
+        const handleTouchMoveOrStart = (e) => {
+            e.preventDefault();
+            const currentTouchLanes = new Set();
 
-                btn.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    this.triggerLaneRelease(lane);
-                }, { passive: false });
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                const lane = this.getLaneFromX(touch.clientX);
+                if (lane !== -1) {
+                    currentTouchLanes.add(lane);
+                    const prevLane = activeTouchLanes.get(touch.identifier);
 
-                // マウスイベント
-                btn.addEventListener('mousedown', (e) => {
-                    this.triggerLanePress(lane);
-                });
-
-                btn.addEventListener('mouseup', (e) => {
-                    this.triggerLaneRelease(lane);
-                });
-
-                btn.addEventListener('mouseleave', (e) => {
-                    if (this.activeKeys[lane]) {
-                        this.triggerLaneRelease(lane);
+                    // 指が別のレーンに横移動（なぞりスライド）した場合
+                    if (prevLane !== undefined && prevLane !== lane) {
+                        this.triggerLaneRelease(prevLane);
+                        this.triggerLanePress(lane);
+                    } else if (prevLane === undefined) {
+                        this.triggerLanePress(lane);
                     }
-                });
+                    activeTouchLanes.set(touch.identifier, lane);
+                }
             }
-        }
+
+            // 画面から離れたタッチのクリーンアップ
+            for (const [id, lane] of activeTouchLanes.entries()) {
+                let found = false;
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].identifier === id) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    this.triggerLaneRelease(lane);
+                    activeTouchLanes.delete(id);
+                }
+            }
+        };
+
+        const handleTouchEnd = (e) => {
+            e.preventDefault();
+            for (const [id, lane] of activeTouchLanes.entries()) {
+                let found = false;
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].identifier === id) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    this.triggerLaneRelease(lane);
+                    activeTouchLanes.delete(id);
+                }
+            }
+        };
+
+        // レール（キャンバスおよび下部コントロール領域）全体でスライド＆タップ入力を受ける
+        const inputTargets = [this.canvas, document.getElementById('touch-controls-container')].filter(Boolean);
+
+        inputTargets.forEach(target => {
+            target.addEventListener('touchstart', handleTouchMoveOrStart, { passive: false });
+            target.addEventListener('touchmove', handleTouchMoveOrStart, { passive: false });
+            target.addEventListener('touchend', handleTouchEnd, { passive: false });
+            target.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+        });
+
+        // PC マウスドラッグ・スライド対応
+        let isMouseDown = false;
+        let lastMouseLane = -1;
+
+        window.addEventListener('mousedown', (e) => {
+            const lane = this.getLaneFromX(e.clientX);
+            if (lane !== -1) {
+                isMouseDown = true;
+                lastMouseLane = lane;
+                this.triggerLanePress(lane);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            const lane = this.getLaneFromX(e.clientX);
+            if (lane !== -1 && lane !== lastMouseLane) {
+                if (lastMouseLane !== -1) this.triggerLaneRelease(lastMouseLane);
+                this.triggerLanePress(lane);
+                lastMouseLane = lane;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isMouseDown) {
+                isMouseDown = false;
+                if (lastMouseLane !== -1) {
+                    this.triggerLaneRelease(lastMouseLane);
+                    lastMouseLane = -1;
+                }
+            }
+        });
     }
 
     triggerLanePress(lane) {

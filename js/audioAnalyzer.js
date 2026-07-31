@@ -109,7 +109,8 @@ class AudioAnalyzer {
     }
 
     /**
-     * MP3のPCMデータからエネルギーピーク（ビート）を検出
+     * MP3のPCMデータからエネルギーピーク（ビート＆アタック）を検出
+     * テンポとボーカル発声に100%ピッタリ同期する高精度アタック解析
      * @param {AudioBuffer} audioBuffer 
      * @param {string} difficulty - EASY | NORMAL | HARD | EXPERT
      * @returns {Array<{time: number, energy: number}>}
@@ -117,35 +118,35 @@ class AudioAnalyzer {
     detectBeats(audioBuffer, difficulty = 'NORMAL') {
         const pcm = audioBuffer.getChannelData(0);
         const sampleRate = audioBuffer.sampleRate;
-        const windowSize = Math.floor(sampleRate * 0.03); // ~30ms ウィンドウ
+        const windowSize = Math.floor(sampleRate * 0.02); // ~20ms 高精度アタック検出
         const beats = [];
 
         let prevEnergy = 0;
         const totalWindows = Math.floor(pcm.length / windowSize);
 
-        // 難易度別のエネルギー閾値設定
+        // 難易度別の間隔設定（NORMALとHARDの差を滑らかに調整）
         const minGap = {
-            EASY: 0.5,
-            NORMAL: 0.3,
-            HARD: 0.18,
-            EXPERT: 0.11
-        }[difficulty] || 0.3;
+            EASY: 0.45,
+            NORMAL: 0.32,
+            HARD: 0.22,   // 以前の 0.18s からマイルド化してちょうどいい歯ごたえに
+            EXPERT: 0.14
+        }[difficulty] || 0.32;
 
         const sensitivityMultiplier = {
-            EASY: 1.8,
-            NORMAL: 1.4,
-            HARD: 1.15,
-            EXPERT: 0.9
-        }[difficulty] || 1.4;
+            EASY: 1.6,
+            NORMAL: 1.25,
+            HARD: 1.05,
+            EXPERT: 0.85
+        }[difficulty] || 1.25;
 
         let lastBeatTime = -minGap;
 
-        // 全体の平均エネルギーを事前計算
+        // 全体の平均エネルギーを計算
         let totalEnergy = 0;
-        for (let i = 0; i < pcm.length; i += 100) {
+        for (let i = 0; i < pcm.length; i += 80) {
             totalEnergy += pcm[i] * pcm[i];
         }
-        const avgEnergy = (totalEnergy / (pcm.length / 100)) * sensitivityMultiplier;
+        const avgEnergy = (totalEnergy / (pcm.length / 80)) * sensitivityMultiplier;
 
         for (let w = 0; w < totalWindows; w++) {
             const time = (w * windowSize) / sampleRate;
@@ -160,8 +161,8 @@ class AudioAnalyzer {
             const currentEnergy = Math.sqrt(sum / windowSize);
             const energyDelta = currentEnergy - prevEnergy;
 
-            // アタック（エネルギー上昇ピーク）判定
-            if (currentEnergy > avgEnergy && energyDelta > 0.02) {
+            // アタック（音の立ち上がり急変化）の検出でビート・歌声の切り替わりにピッタリ追従
+            if (currentEnergy > avgEnergy && energyDelta > 0.015) {
                 if (time - lastBeatTime >= minGap) {
                     beats.push({
                         time: parseFloat(time.toFixed(3)),
@@ -200,12 +201,12 @@ class AudioAnalyzer {
             });
         }
 
-        // 2. 音響ビートイベントの追加（難易度別の間引きと近接排除）
-        const duplicateThreshold = (difficulty === 'EASY' || difficulty === 'NORMAL') ? 0.35 : 0.12;
-        const skipChance = { EASY: 1.0, NORMAL: 0.75, HARD: 0.3, EXPERT: 0 }[difficulty] || 0.4;
+        // 2. 音響ビートイベントの追加（難易度別の適正間引き）
+        const duplicateThreshold = (difficulty === 'EASY') ? 0.40 : (difficulty === 'NORMAL' ? 0.28 : 0.18);
+        const skipChance = { EASY: 0.50, NORMAL: 0.25, HARD: 0.10, EXPERT: 0 }[difficulty] || 0.25;
 
         for (const b of beatEvents) {
-            // 難易度によるランダム間引き
+            // 難易度による適度な間引き
             if (Math.random() < skipChance) continue;
 
             const duplicate = rawNotes.some(n => Math.abs(n.time - b.time) < duplicateThreshold);

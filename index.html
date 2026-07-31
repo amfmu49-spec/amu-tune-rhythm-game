@@ -160,8 +160,17 @@
                 <div class="modal-tab-contents">
                     <!-- タブ1: 🚀 クイックスタート -->
                     <div class="tab-content active" id="quick-tab">
-                        <p class="tab-desc">ブックマークレットから連携した楽曲、または選択中の曲ですぐにノーツを自動生成してスタートできます！</p>
+                        <p class="tab-desc">ブックマークレットから連携した楽曲、Sunoの楽曲URL貼り付け、またはデモ曲ですぐにノーツを生成して遊べます！</p>
                         
+                        <!-- Suno 楽曲URL / ID 直接入力エリア -->
+                        <div style="margin-top: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(0,229,255,0.35); border-radius: 8px; padding: 10px;">
+                            <label style="color: #00e5ff; font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">🔗 Suno 楽曲URL または 楽曲ID (UUID) を入力:</label>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="suno-url-input" placeholder="https://suno.com/song/xxxxx または 楽曲ID" style="flex: 1; padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.8rem;">
+                                <button id="suno-url-load-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #00e5ff, #0088ff); color: #fff; font-weight: bold; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">読み込み</button>
+                            </div>
+                        </div>
+
                         <!-- 難易度設定 & スタートボタン -->
                         <div class="modal-controls" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
                             <div class="diff-selector">
