@@ -160,7 +160,7 @@
                 <div class="modal-tab-contents">
                     <!-- タブ1: 🚀 クイックスタート -->
                     <div class="tab-content active" id="quick-tab">
-                        <p class="tab-desc">ブックマークレットから連携した楽曲、Sunoの楽曲URL貼り付け、またはデモ曲ですぐにノーツを生成して遊べます！</p>
+                        <p class="tab-desc">連携済み楽曲のスタート、またはSunoの楽曲URLを貼り付けて「読み込み」を押すだけで自動でノーツを生成できます！</p>
                         
                         <!-- Suno 楽曲URL / ID 直接入力エリア -->
                         <div style="margin-top: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(0,229,255,0.35); border-radius: 8px; padding: 10px;">
@@ -169,23 +169,6 @@
                                 <input type="text" id="suno-url-input" placeholder="https://suno.com/song/xxxxx または 楽曲ID" style="flex: 1; padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.8rem;">
                                 <button id="suno-url-load-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #00e5ff, #0088ff); color: #fff; font-weight: bold; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">読み込み</button>
                             </div>
-                        </div>
-
-                        <!-- 難易度設定 & スタートボタン -->
-                        <div class="modal-controls" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                            <div class="diff-selector">
-                                <label style="color: var(--text-muted); font-size: 0.85rem;">難易度:</label>
-                                <div class="diff-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
-                                    <button class="diff-btn" data-diff="EASY">EASY</button>
-                                    <button class="diff-btn active" data-diff="NORMAL">NORMAL</button>
-                                    <button class="diff-btn" data-diff="HARD">HARD</button>
-                                    <button class="diff-btn" data-diff="EXPERT">EXPERT</button>
-                                </div>
-                            </div>
-
-                            <button class="action-btn start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 14px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), var(--gold-accent)); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
-                                ⚡ ノーツを自動作成してプレイ！
-                            </button>
                         </div>
                     </div>
 
@@ -249,16 +232,32 @@
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <!-- 共通フッター: 難易度設定 & スタートボタン (全タブで常に表示) -->
+                <div class="modal-controls" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <div class="diff-selector">
+                        <label style="color: var(--text-muted); font-size: 0.85rem;">難易度:</label>
+                        <div class="diff-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
+                            <button class="diff-btn" data-diff="EASY">EASY</button>
+                            <button class="diff-btn active" data-diff="NORMAL">NORMAL</button>
+                            <button class="diff-btn" data-diff="HARD">HARD</button>
+                            <button class="diff-btn" data-diff="EXPERT">EXPERT</button>
+                        </div>
+                    </div>
+
+                    <button class="action-btn start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 14px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), var(--gold-accent)); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+                        ⚡ ノーツを自動作成してプレイ！
+                    </button>
+                </div>            </div>
         </div>
     </div>
 
     <!-- JSモジュールロード -->
-    <script src="js/srtParser.js?v=22"></script>
-    <script src="js/audioAnalyzer.js?v=22"></script>
-    <script src="js/gameEngine.js?v=22"></script>
-    <script src="js/uiManager.js?v=22"></script>
-    <script src="js/bookmarkletHelper.js?v=22"></script>
-    <script src="js/app.js?v=22"></script>
+    <script src="js/srtParser.js?v=24"></script>
+    <script src="js/audioAnalyzer.js?v=24"></script>
+    <script src="js/gameEngine.js?v=24"></script>
+    <script src="js/uiManager.js?v=24"></script>
+    <script src="js/bookmarkletHelper.js?v=24"></script>
+    <script src="js/app.js?v=24"></script>
 </body>
 </html>
