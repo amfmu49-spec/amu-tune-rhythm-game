@@ -451,45 +451,40 @@ html, body {
     font-weight: bold;
 }
 
-/* 2. Top Right Panel */
+/* 2. Top Right Panel (TRACK INFO 小窓) */
 .top-right-panel {
     top: 10px;
     right: 10px;
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: 170px;
-    max-width: 210px;
+    min-width: 160px;
+    max-width: 220px;
     padding: 6px 10px;
+    background: rgba(10, 12, 18, 0.85) !important;
+    border: 1px solid rgba(0, 229, 255, 0.4) !important;
+    border-left: 3px solid #00e5ff !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
 }
 
 .song-cover {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 6px;
     overflow: hidden;
     background: #111;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(0, 229, 255, 0.5);
     flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
 }
 
 .cover-art {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #ff512f, #dd2476);
+    background-size: cover;
+    background-position: center;
     position: relative;
-}
-
-.sun-graphic {
-    width: 24px;
-    height: 24px;
-    background: #ffb700;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 12px #ffaa00;
 }
 
 .song-meta {
@@ -497,6 +492,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    overflow: hidden;
 }
 
 .song-title {

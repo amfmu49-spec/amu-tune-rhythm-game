@@ -49,6 +49,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Suno Webページ HTML からの強力メタデータスクレイピング関数
+    const parseSunoMetadataFromHtml = (htmlText) => {
+        let title = '';
+        let coverUrl = '';
+        let artist = '';
+
+        try {
+            const ogTitleMatch = htmlText.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+            if (ogTitleMatch) title = ogTitleMatch[1];
+
+            const ogImageMatch = htmlText.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+            if (ogImageMatch) coverUrl = ogImageMatch[1];
+
+            const authorMatch = htmlText.match(/<meta\s+name=["']author["']\s+content=["']([^"']+)["']/i);
+            if (authorMatch) artist = authorMatch[1];
+
+            if (!title) {
+                const titleJsonMatch = htmlText.match(/"title"\s*:\s*"([^"]+)"/);
+                if (titleJsonMatch) title = titleJsonMatch[1];
+            }
+            if (!coverUrl) {
+                const imgJsonMatch = htmlText.match(/"image_url"\s*:\s*"([^"]+)"/);
+                if (imgJsonMatch) coverUrl = imgJsonMatch[1];
+            }
+        } catch (e) {
+            console.warn('Metadata scrape warning:', e);
+        }
+
+        if (title) {
+            title = title.replace(/\s*\| Suno$/i, '').replace(/^Suno\s*-\s*/i, '').trim();
+        }
+
+        return { title, coverUrl, artist };
+    };
+
     // ==========================================================================
     // UIイベントバインド (オプショナルチェイニングで100%安全保護)
     // ==========================================================================
@@ -412,31 +447,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         ui.showLoadModal();
 
-        // Suno 標準カバー画像 ＆ 曲名メタデータの自動抽出・更新
+        // Suno 標準カバー画像 ＆ 曲名メタデータの自動抽出・更新 (HTMLスクレイピング ＋ CDNフォールバック)
         try {
             const cdnCoverUrl = `https://cdn1.suno.ai/image_${uuid}.png`;
             setSongCoverArt(cdnCoverUrl);
 
-            // API から曲名・アーティスト情報を自動取得
-            const metaApiUrl = `https://api.suno.ai/api/external/fetch/?ids=${uuid}`;
-            fetchWithProxy(metaApiUrl).then(metaBuffer => {
-                const metaText = new TextDecoder().decode(metaBuffer);
-                const metaJson = JSON.parse(metaText);
-                if (Array.isArray(metaJson) && metaJson.length > 0) {
-                    const song = metaJson[0];
-                    if (song.title) {
-                        const titleDisp = document.getElementById('song-title-display');
-                        if (titleDisp) titleDisp.textContent = song.title;
-                    }
-                    if (song.display_name || song.handle) {
-                        const artistDisp = document.getElementById('song-artist-display');
-                        if (artistDisp) artistDisp.textContent = song.display_name || `@${song.handle}`;
-                    }
-                    if (song.image_url) {
-                        setSongCoverArt(song.image_url);
-                    }
+            // Suno ページ HTML からのダイレクトスクレイピング取得
+            const sunoSongPageUrl = `https://suno.com/song/${uuid}`;
+            fetchWithProxy(sunoSongPageUrl).then(htmlBuffer => {
+                const htmlText = new TextDecoder().decode(htmlBuffer);
+                const meta = parseSunoMetadataFromHtml(htmlText);
+                if (meta.title) {
+                    const titleDisp = document.getElementById('song-title-display');
+                    if (titleDisp) titleDisp.textContent = meta.title;
                 }
-            }).catch(e => console.warn('Metadata fetch fallback:', e));
+                if (meta.artist) {
+                    const artistDisp = document.getElementById('song-artist-display');
+                    if (artistDisp) artistDisp.textContent = meta.artist;
+                }
+                if (meta.coverUrl) {
+                    setSongCoverArt(meta.coverUrl);
+                }
+            }).catch(e => console.warn('HTML scrape fallback:', e));
         } catch (e) {
             console.warn('Cover set fallback:', e);
         }

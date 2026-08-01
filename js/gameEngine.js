@@ -441,40 +441,23 @@ class GameEngine {
                 continue;
             }
 
-            // 3. ホールド維持状態のチェック
+            // 3. ホールド維持状態のチェック (一度ホールド状態に入ったらノーツ完了まで絶対保護！)
             if (note.holding) {
-                // 画面上に何らかのタッチ・キー入力が継続しているかチェック (スマホタッチ中も完全維持)
-                const anyPressed = Object.values(this.activeKeys).some(Boolean) || Boolean(this.isTouchActive);
+                note.lastHoldTime = currentTime;
 
-                if (anyPressed) {
-                    note.lastHoldTime = currentTime;
+                // 連続ティック加点 (0.08秒ごと)
+                if (currentTime - note.lastTickTime >= 0.08) {
+                    note.lastTickTime = currentTime;
+                    this.combo++;
+                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+                    const tickScore = 150 + Math.floor(this.combo * 3);
+                    this.score += tickScore;
+                    this.hp = Math.min(100, this.hp + 0.5);
 
-                    // 連続ティック加点 (0.08秒ごと)
-                    if (currentTime - note.lastTickTime >= 0.08) {
-                        note.lastTickTime = currentTime;
-                        this.combo++;
-                        if (this.combo > this.maxCombo) this.maxCombo = this.combo;
-                        const tickScore = 150 + Math.floor(this.combo * 3);
-                        this.score += tickScore;
-                        this.hp = Math.min(100, this.hp + 0.5);
-
-                        this.createHoldParticles(reqLane, note.type);
-                        if (this.onScoreUpdate) this.onScoreUpdate(this.score);
-                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
-                        if (this.onHpUpdate) this.onHpUpdate(this.hp);
-                    }
-                } else {
-                    // 指が完全に離れた場合のみ MISS 判定にする (猶予 0.35 秒)
-                    if (currentTime - note.lastHoldTime > 0.35) {
-                        note.holding = false;
-                        note.missed = true;
-                        this.combo = 0;
-                        this.counts.miss++;
-                        this.addJudgmentPopup('MISS', reqLane, 0);
-                        if (this.onJudgment) this.onJudgment('MISS');
-                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
-                        if (this.onHpUpdate) this.onHpUpdate(this.hp);
-                    }
+                    this.createHoldParticles(reqLane, note.type);
+                    if (this.onScoreUpdate) this.onScoreUpdate(this.score);
+                    if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                    if (this.onHpUpdate) this.onHpUpdate(this.hp);
                 }
 
                 // 4. ホールド完了判定 (ノーツ終了時刻に到達)
