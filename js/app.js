@@ -18,7 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let uploadedMp3Buffer = null;
     let uploadedSrtText = null;
+    let currentSunoUuid = null;
     let pendingExternalLoad = false; // ブックマークレット連携中はデモフォールバックを防ぐ
+
+    // トースト通知ヘッダー
+    const showToast = (message) => {
+        const toast = document.getElementById('toast-notification');
+        if (toast) {
+            toast.textContent = message;
+            toast.classList.remove('active');
+            void toast.offsetWidth; // Reflow
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3500);
+        }
+    };
 
     // カバーアート表示の更新ヘルパー
     const setSongCoverArt = (coverUrl) => {
@@ -62,6 +75,37 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadByUuid(uuidMatch[0]);
         } else {
             alert('有効なSuno楽曲URLまたはUUIDが見つかりませんでした。\n例: https://suno.com/song/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+        }
+    });
+
+    // 🌐「この曲をWEBサイトに埋め込む」ワンタップコピーボタン
+    document.getElementById('embed-code-copy-btn')?.addEventListener('click', () => {
+        const baseUrl = window.location.origin + window.location.pathname;
+        const activeDiff = ui.selectedDifficulty || 'NORMAL';
+        let songParam = '';
+        let songName = '選択中楽曲';
+
+        if (currentSunoUuid) {
+            songParam = `suno_id=${currentSunoUuid}`;
+            songName = document.getElementById('song-title-display')?.textContent || 'Suno楽曲';
+        } else {
+            const selectedDemoCard = document.querySelector('.demo-song-card.selected');
+            const demoKey = selectedDemoCard ? selectedDemoCard.getAttribute('data-demo') : 'suno_sunrise';
+            songParam = `song=${demoKey}`;
+            songName = selectedDemoCard ? (selectedDemoCard.querySelector('.demo-title')?.textContent || demoKey) : 'Suno Sunrise';
+        }
+
+        const embedUrl = `${baseUrl}?${songParam}&diff=${activeDiff}&embed=true&autostart=true`;
+        const iframeCode = `<iframe src="${embedUrl}" width="420" height="700" style="border:none; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);" allow="autoplay; haptic-feedback"></iframe>`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(iframeCode).then(() => {
+                showToast(`⚡ 「${songName}」の埋め込みHTMLコードをコピーしました！`);
+            }).catch(() => {
+                prompt('以下の埋め込みHTMLコードをコピーしてください:', iframeCode);
+            });
+        } else {
+            prompt('以下の埋め込みHTMLコードをコピーしてください:', iframeCode);
         }
     });
 
@@ -305,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // UUID指定での楽曲自動ロード共通処理
     // ==========================================================================
     const loadByUuid = async (uuid) => {
+        currentSunoUuid = uuid;
         const mp3Url = 'https://cdn1.suno.ai/' + uuid + '.mp3';
         console.log('[AMU TUNE] Loading UUID:', uuid, 'URL:', mp3Url);
 
@@ -391,20 +436,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const checkImportedBookmarkletData = async () => {
+    // ==========================================================================
+    // URLクエリパラメータ自動解析＆埋め込み起動処理 (suno_id, song, diff, embed, autostart)
+    // ==========================================================================
+    const handleUrlParams = async () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const uuid = urlParams.get('mp3uuid');
-        if (!uuid) return;
+        const sunoId = urlParams.get('suno_id') || urlParams.get('uuid') || urlParams.get('mp3uuid');
+        const songKey = urlParams.get('song');
+        const diff = urlParams.get('diff');
+        const isEmbed = urlParams.get('embed') === 'true';
+        const autostart = urlParams.get('autostart') === 'true';
 
-        // URLをきれいにする
-        window.history.replaceState(null, null, window.location.pathname);
-        await loadByUuid(uuid);
+        if (isEmbed) {
+            document.body.classList.add('is-embed');
+        }
+
+        if (diff) {
+            ui.selectedDifficulty = diff.toUpperCase();
+            const diffBtn = document.querySelector(`.diff-btn[data-diff="${diff.toUpperCase()}"]`);
+            if (diffBtn) {
+                document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                diffBtn.classList.add('active');
+                if (ui.currentDiffBadge) ui.currentDiffBadge.textContent = diff.toUpperCase();
+            }
+        }
+
+        if (sunoId) {
+            pendingExternalLoad = true;
+            ui.hideLoadModal();
+            await loadByUuid(sunoId);
+            if (autostart) setTimeout(() => gameEngine.play(), 600);
+        } else if (songKey) {
+            pendingExternalLoad = true;
+            ui.hideLoadModal();
+            const card = document.querySelector(`.demo-song-card[data-demo="${songKey}"]`);
+            if (card) {
+                document.querySelectorAll('.demo-song-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+            const startBtn = document.getElementById('start-game-btn');
+            if (startBtn) startBtn.click();
+            if (autostart) setTimeout(() => gameEngine.play(), 600);
+        } else {
+            // 通常アクセス時は画面選択モーダルを表示
+            ui.showLoadModal();
+        }
     };
 
     // 初期化実行
-    checkImportedBookmarkletData();
-    window.addEventListener('hashchange', checkImportedBookmarkletData);
-    
-    // 初回起動時にホーム画面（楽曲選択モーダル）を確実に表示
-    ui.showLoadModal();
+    handleUrlParams();
+    window.addEventListener('hashchange', handleUrlParams);
 });

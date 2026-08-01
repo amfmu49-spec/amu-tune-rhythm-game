@@ -115,10 +115,23 @@ class UIManager {
         if (!this.comboCount) return;
         this.comboCount.textContent = combo;
 
-        if (combo > 0 && this.comboDisplay) {
-            this.comboDisplay.classList.remove('bounce');
+        if (this.comboDisplay) {
+            this.comboDisplay.classList.remove('bounce', 'fever-level-1', 'fever-level-2', 'fever-level-3', 'fever-level-4');
             void this.comboDisplay.offsetWidth; // reflow
-            this.comboDisplay.classList.add('bounce');
+
+            if (combo >= 200) {
+                this.comboDisplay.classList.add('fever-level-4');
+            } else if (combo >= 100) {
+                this.comboDisplay.classList.add('fever-level-3');
+            } else if (combo >= 50) {
+                this.comboDisplay.classList.add('fever-level-2');
+            } else if (combo >= 20) {
+                this.comboDisplay.classList.add('fever-level-1');
+            }
+
+            if (combo > 0) {
+                this.comboDisplay.classList.add('bounce');
+            }
         }
         this.updateTitleAndRank(this.lastScore || 0, combo);
     }

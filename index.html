@@ -33,18 +33,19 @@
     <!-- スマホ縦画面 9:16 コンテナ -->
     <div class="app-container">
 
-        <!-- 1. 最上部ヘッダー (ブランドロゴ / ステータス / ホームボタン / 設定) -->
+        <!-- 1. 最上部ヘッダー (ブランドロゴ / ステータス / ホームボタン / 設定 / バージョン表記) -->
         <header class="top-header">
-            <div class="header-left" style="display: flex; gap: 6px;">
-                <button class="home-btn" id="home-modal-open-btn" style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 20px; color: #fff; font-weight: bold; font-size: 0.78rem; cursor: pointer; box-shadow: 0 0 10px rgba(255,107,0,0.4);">
+            <div class="header-left" style="display: flex; gap: 6px; align-items: center;">
+                <button class="home-btn" id="home-modal-open-btn" style="display: flex; align-items: center; gap: 4px; padding: 5px 9px; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 20px; color: #fff; font-weight: bold; font-size: 0.75rem; cursor: pointer; box-shadow: 0 0 10px rgba(255,107,0,0.4);">
                     🏠曲選択
                 </button>
-                <button class="retry-btn" id="retry-game-btn" style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: linear-gradient(135deg, #00e5ff, #0088ff); border: none; border-radius: 20px; color: #fff; font-weight: bold; font-size: 0.78rem; cursor: pointer; box-shadow: 0 0 10px rgba(0,229,255,0.4);">
-                    🔄最初から
+                <button class="retry-btn" id="retry-game-btn" style="display: flex; align-items: center; gap: 4px; padding: 5px 9px; background: linear-gradient(135deg, #00e5ff, #0088ff); border: none; border-radius: 20px; color: #fff; font-weight: bold; font-size: 0.75rem; cursor: pointer; box-shadow: 0 0 10px rgba(0,229,255,0.4);">
+                    🔄リトライ
                 </button>
             </div>
-            <div class="header-center">
+            <div class="header-center" style="display: flex; flex-direction: column; align-items: center;">
                 <div class="mode-badge">AMU TUNE</div>
+                <span class="app-version-tag" style="font-size: 0.62rem; color: #00e5ff; font-weight: 700; font-family: var(--font-heading); letter-spacing: 0.5px;">v1.3.0</span>
             </div>
             <div class="header-right">
                 <div class="user-currency">
@@ -144,7 +145,10 @@
     <div class="modal-overlay active" id="load-modal">
         <div class="modal-card">
             <div class="modal-header">
-                <h2>⚡ 楽曲データの取り込み・選択</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>⚡ 楽曲データの取り込み・選択</h2>
+                    <span style="font-size: 0.72rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 2px 8px; border-radius: 10px;">v1.3.0</span>
+                </div>
                 <p>MP3音声とSRT字幕から自動ノーツを生成します</p>
             </div>
 
@@ -245,12 +249,24 @@
                         </div>
                     </div>
 
-                    <button class="action-btn start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 14px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), var(--gold-accent)); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+                    <button class="action-btn start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 14px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), var(--gold-accent)); border: none; border-radius: 8px; color: #fff; cursor: pointer; box-shadow: 0 0 15px rgba(255,107,0,0.4);">
                         ⚡ ノーツを自動作成してプレイ！
                     </button>
+
+                    <!-- 🌐 WEBサイト埋め込みコードワンタップコピーボタン -->
+                    <button class="action-btn embed-btn" id="embed-code-copy-btn" style="width: 100%; margin-top: 8px; padding: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 8px; color: #00e5ff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                        🔗 この曲をWEBサイトに埋め込む
+                    </button>
+
+                    <div style="text-align: center; margin-top: 8px; font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-heading);">
+                        AMU TUNE ENGINE v1.3.0 (Build 2026.08) • FEVER STAGE ENGINE ACTIVE
+                    </div>
                 </div>            </div>
         </div>
     </div>
+
+    <!-- 🍞 ワンタップコピー完了トースト通知 -->
+    <div id="toast-notification" class="toast-notification"></div>
 
     <!-- JSモジュールロード -->
     <script src="js/srtParser.js?v=24"></script>

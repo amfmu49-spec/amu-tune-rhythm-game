@@ -74,7 +74,20 @@ class GameEngine {
     // 譜面 ＆ 音声設定
     // ==========================================================================
     setChartAndAudio(chart, audioBuffer, difficulty = 'NORMAL') {
-        this.chart = chart.map(n => ({ ...n, hit: false, missed: false }));
+        this.chart = chart.map(n => ({
+            ...n,
+            type: n.type || (n.isHold ? 'hold' : 'tap'),
+            startLane: n.lane,
+            endLane: n.endLane !== undefined ? n.endLane : n.lane,
+            hit: false,
+            missed: false,
+            holding: false,
+            completed: false,
+            headHit: false,
+            headResult: null,
+            lastHoldTime: 0,
+            lastTickTime: 0
+        }));
         this.audioBuffer = audioBuffer;
         this.difficulty = difficulty;
         this.resetGameStats();
@@ -335,7 +348,15 @@ class GameEngine {
         if (!this.isPlaying) return;
         const currentTime = this.getCurrentTime();
 
-        const targetNote = this.chart.find(n => n.lane === lane && !n.hit && !n.missed);
+        // 対象レーンで未処理のノーツを検索
+        const targetNote = this.chart.find(n => {
+            if (n.hit || n.missed || n.completed) return false;
+            if (n.type === 'tap' || !n.headHit) {
+                return n.lane === lane;
+            }
+            return false;
+        });
+
         if (!targetNote) return;
 
         const diff = Math.abs(targetNote.time - currentTime);
@@ -355,7 +376,17 @@ class GameEngine {
         }
 
         if (result) {
-            targetNote.hit = true;
+            if (targetNote.type === 'tap') {
+                targetNote.hit = true;
+            } else {
+                // HOLD / SLIDE ノーツの頭ヒット
+                targetNote.headHit = true;
+                targetNote.holding = true;
+                targetNote.headResult = result;
+                targetNote.lastHoldTime = currentTime;
+                targetNote.lastTickTime = currentTime;
+            }
+
             this.combo++;
             if (this.combo > this.maxCombo) this.maxCombo = this.combo;
             this.score += scoreAdd + Math.floor(this.combo * 10);
@@ -369,6 +400,117 @@ class GameEngine {
             if (this.onScoreUpdate) this.onScoreUpdate(this.score);
             if (this.onComboUpdate) this.onComboUpdate(this.combo);
             if (this.onHpUpdate) this.onHpUpdate(this.hp);
+        }
+    }
+
+    /**
+     * HOLD / SLIDE ノーツの継続判定・加点・完了・MISS判定
+     */
+    updateHoldNotes(currentTime, delta) {
+        if (!this.isPlaying) return;
+
+        for (const note of this.chart) {
+            if (note.type === 'tap' || note.completed || note.missed) continue;
+
+            // 1. ノーツの現在時刻における必要レーン (reqLane) を算出
+            let reqLane = note.lane;
+            if (note.type === 'slide' && note.duration > 0) {
+                const progress = Math.max(0, Math.min(1, (currentTime - note.time) / note.duration));
+                reqLane = Math.round(note.lane + (note.endLane - note.lane) * progress);
+            }
+
+            // 2. 開始時間を過ぎても押し始めなかった場合の MISS 判定
+            if (!note.headHit && !note.holding && (currentTime - note.time > 0.140)) {
+                note.missed = true;
+                this.combo = 0;
+                const hpLoss = { EASY: 1.5, NORMAL: 3.0, HARD: 6.0, EXPERT: 10.0 }[this.difficulty] || 5;
+                this.hp = Math.max(0, this.hp - hpLoss);
+                this.counts.miss++;
+                this.addJudgmentPopup('MISS', reqLane, 0);
+                if (this.onJudgment) this.onJudgment('MISS');
+                if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                continue;
+            }
+
+            // 3. ホールド維持状態のチェック
+            if (note.holding) {
+                // ユーザーが reqLane (またはスライド移動中の隣接レーン) を押しているかチェック
+                const isPressed = this.activeKeys[reqLane] ||
+                                  (note.type === 'slide' && (this.activeKeys[Math.max(0, reqLane - 1)] || this.activeKeys[Math.min(this.lanesCount - 1, reqLane + 1)]));
+
+                if (isPressed) {
+                    note.lastHoldTime = currentTime;
+
+                    // 連続ティック加点 (0.08秒ごと)
+                    if (currentTime - note.lastTickTime >= 0.08) {
+                        note.lastTickTime = currentTime;
+                        this.combo++;
+                        if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+                        const tickScore = 150 + Math.floor(this.combo * 3);
+                        this.score += tickScore;
+                        this.hp = Math.min(100, this.hp + 0.5);
+
+                        this.createHoldParticles(reqLane, note.type);
+                        if (this.onScoreUpdate) this.onScoreUpdate(this.score);
+                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                        if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                    }
+                } else {
+                    // 指が離れて 0.12 秒以上経過した場合 -> ホールド中断 (MISS)
+                    if (currentTime - note.lastHoldTime > 0.12) {
+                        note.holding = false;
+                        note.missed = true;
+                        this.combo = 0;
+                        this.counts.miss++;
+                        this.addJudgmentPopup('MISS', reqLane, 0);
+                        if (this.onJudgment) this.onJudgment('MISS');
+                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                        if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                    }
+                }
+
+                // 4. ホールド完了判定 (ノーツ終了時刻に到達)
+                if (currentTime >= note.time + note.duration) {
+                    note.completed = true;
+                    note.hit = true;
+                    note.holding = false;
+
+                    const fullBonus = 1500 + Math.floor(this.combo * 15);
+                    this.score += fullBonus;
+                    this.combo++;
+                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+                    const popupText = note.type === 'slide' ? 'SLIDE COMPLETE!' : 'FULL HOLD!';
+                    this.addJudgmentPopup(popupText, note.endLane, fullBonus);
+                    this.createHitParticles(note.endLane, 'PERFECT');
+
+                    if (this.onScoreUpdate) this.onScoreUpdate(this.score);
+                    if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                }
+            }
+        }
+    }
+
+    createHoldParticles(lane, type = 'hold') {
+        const laneBounds = this.getLaneBounds(lane);
+        const centerX = laneBounds.x + laneBounds.width / 2;
+        const centerY = this.receptorY;
+
+        const color = (type === 'slide') ? '#00e5ff' : '#ffaa00';
+        for (let i = 0; i < 3; i++) {
+            const angle = -Math.PI / 2 + (Math.random() * 1.2 - 0.6);
+            const speed = 2 + Math.random() * 4;
+            this.particles.push({
+                x: centerX + (Math.random() * 20 - 10),
+                y: centerY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: 2 + Math.random() * 2.5,
+                color: color,
+                alpha: 1.0,
+                life: 0.6
+            });
         }
     }
 
@@ -387,39 +529,69 @@ class GameEngine {
         });
     }
 
+    getComboLevel() {
+        if (this.combo >= 200) return 4; // ULTIMATE GOD MODE
+        if (this.combo >= 100) return 3; // HYPER OVERDRIVE
+        if (this.combo >= 50) return 2;  // SUPER FEVER
+        if (this.combo >= 20) return 1;  // FEVER
+        return 0;                         // NORMAL
+    }
+
+    triggerScreenShake() {
+        const level = this.getComboLevel();
+        if (level < 2) return; // 50コンボ以上からヒット時の画面シェイクが発動
+        const viewport = document.querySelector('.game-viewport');
+        if (viewport) {
+            viewport.classList.remove('shake');
+            void viewport.offsetWidth; // Reflow
+            viewport.classList.add('shake');
+            setTimeout(() => viewport.classList.remove('shake'), 130);
+        }
+    }
+
     // ==========================================================================
-    // 粒子スパーク爆発エフェクト
+    // 粒子スパーク爆発エフェクト (コンボレベル連動)
     // ==========================================================================
     createHitParticles(lane, result) {
         const laneBounds = this.getLaneBounds(lane);
         const centerX = laneBounds.x + laneBounds.width / 2;
         const centerY = this.receptorY;
 
-        // コンボに応じた演出スケール係数 (最大2.5倍)
-        const comboScale = Math.min(2.5, 1.0 + (this.combo / 50.0));
+        const level = this.getComboLevel();
+        this.triggerScreenShake();
 
-        const baseCount = (result === 'PERFECT') ? 35 : (result === 'GREAT' ? 20 : 10);
-        const count = Math.floor(baseCount * comboScale);
-        
-        let color = '#76ff03'; // GOOD
-        if (result === 'PERFECT') {
-            color = (this.combo >= 100) ? '#ff00ff' : '#ffaa00'; // 100コンボ以上は超サイバーピンクパープル
-        } else if (result === 'GREAT') {
-            color = '#00e5ff';
-        }
+        // コンボレベルに応じた演出倍率
+        const levelMultipliers = [1.0, 1.4, 2.0, 2.8, 4.0];
+        const multiplier = levelMultipliers[level];
+
+        const baseCount = (result === 'PERFECT') ? 35 : (result === 'GREAT' ? 22 : 12);
+        const count = Math.floor(baseCount * multiplier);
+
+        const rainbowColors = ['#00e5ff', '#ff00ea', '#ffea00', '#76ff03', '#ffffff', '#ff3d00'];
 
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = (2 + Math.random() * 6) * (0.8 + comboScale * 0.2); // 速度も少しアップ
+            const speed = (3 + Math.random() * 8) * (0.9 + level * 0.35);
+
+            let particleColor = '#76ff03';
+            if (level >= 3) {
+                // 100コンボ以上(HYPER/ULTIMATE)は豪華レインボー爆発！
+                particleColor = rainbowColors[Math.floor(Math.random() * rainbowColors.length)];
+            } else if (result === 'PERFECT') {
+                particleColor = (level >= 2) ? '#ff00ea' : '#ffaa00';
+            } else if (result === 'GREAT') {
+                particleColor = '#00e5ff';
+            }
+
             this.particles.push({
                 x: centerX,
                 y: centerY,
                 vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed - 1.5,
-                radius: (2.5 + Math.random() * 3.5) * (0.9 + comboScale * 0.1), // サイズも少しアップ
-                color: color,
+                vy: Math.sin(angle) * speed - (1.5 + level * 0.5),
+                radius: (2.5 + Math.random() * 4.5) * (1.0 + level * 0.25),
+                color: particleColor,
                 alpha: 1.0,
-                life: 1.0
+                life: 1.0 + Math.random() * 0.3
             });
         }
     }
@@ -453,6 +625,7 @@ class GameEngine {
         const currentTime = this.getCurrentTime();
         if (this.isPlaying) {
             this.updateMisses(currentTime);
+            this.updateHoldNotes(currentTime, delta);
         }
 
         // 画面クリア
@@ -652,45 +825,21 @@ class GameEngine {
             this.ctx.stroke();
         }
 
-        // 3. HUDコックピットブラケット ＆ SFダミーシステム情報
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        this.ctx.lineWidth = 1.5;
-
-        // 左上HUDのコーナーブラケット
-        const hudX = 8, hudY = 8, hudW = 150, hudH = 50;
-        this.ctx.beginPath();
-        // 左上
-        this.ctx.moveTo(hudX + 15, hudY); this.ctx.lineTo(hudX, hudY); this.ctx.lineTo(hudX, hudY + 15);
-        // 右下
-        this.ctx.moveTo(hudX + hudW - 15, hudY + hudH); this.ctx.lineTo(hudX + hudW, hudY + hudH); this.ctx.lineTo(hudX + hudW, hudY + hudH - 15);
-        this.ctx.stroke();
-
-        // ダミーシステム情報テキスト
+        // 3. SFダミーシステム情報 ＆ バージョン表記 (HTML Overlay との被りを防ぐため画面左下にスタイリッシュに配置)
         this.ctx.fillStyle = 'rgba(0, 229, 255, 0.45)';
-        this.ctx.font = '700 8px Orbitron, sans-serif';
-        
-        let systemStatus = "SYSTEM STATUS: ACTIVE";
-        if (this.combo >= 100) systemStatus = "STATUS: SUPER FEVER MODE";
-        else if (this.combo >= 50) systemStatus = "STATUS: FEVER ACTIVE";
-        
-        this.ctx.fillText(systemStatus, 14, 18);
-        this.ctx.fillText("DECIBEL: " + (this.isPlaying ? "94.2 dB" : "0.0 dB"), 14, 28);
-        this.ctx.fillText("FREQ RATE: 44.1 kHz", 14, 38);
+        this.ctx.font = '700 9px Orbitron, sans-serif';
 
-        // 右上HUDのコーナーブラケット
-        const rhudX = this.width - 170, rhudY = 8, rhudW = 162, rhudH = 50;
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        this.ctx.beginPath();
-        // 右上
-        this.ctx.moveTo(rhudX + rhudW - 15, rhudY); this.ctx.lineTo(rhudX + rhudW, rhudY); this.ctx.lineTo(rhudX + rhudW, rhudY + 15);
-        // 左下
-        this.ctx.moveTo(rhudX + 15, rhudY + rhudH); this.ctx.lineTo(rhudX, rhudY + rhudH); this.ctx.lineTo(rhudX, rhudY + rhudH - 15);
-        this.ctx.stroke();
+        let systemStatus = "STATUS: AMU ENGINE v1.3.0";
+        const level = this.getComboLevel();
+        if (level === 4) systemStatus = "STATUS: ULTIMATE GOD MODE ⚡";
+        else if (level === 3) systemStatus = "STATUS: HYPER OVERDRIVE 🔥";
+        else if (level === 2) systemStatus = "STATUS: SUPER FEVER MODE ✨";
+        else if (level === 1) systemStatus = "STATUS: FEVER ACTIVE 🚀";
 
-        this.ctx.fillStyle = 'rgba(255, 107, 0, 0.45)';
-        this.ctx.fillText("AUDIO DECODER: Suno AI", this.width - 162, 18);
-        this.ctx.fillText("BPM COMPATIBLE: " + (this.isPlaying ? "128 (AUTO)" : "IDLE"), this.width - 162, 28);
-        this.ctx.fillText("STREAM BUFFER: 100%", this.width - 162, 38);
+        // 画面左下の安全領域へ描画
+        const hudBottomY = this.receptorY + 45;
+        this.ctx.fillText(systemStatus, 12, hudBottomY);
+        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.3.0", 12, hudBottomY + 12);
 
         this.ctx.restore();
     }
@@ -846,59 +995,213 @@ class GameEngine {
     drawNotes(currentTime) {
         const noteHeight = 22;
 
+        // 時間 t (秒) におけるY座標を算出
+        const getYFromTime = (t) => {
+            const timeDiff = t - currentTime;
+            const progress = 1 - (timeDiff / this.scrollSpeed);
+            return this.spawnY + (this.receptorY - this.spawnY) * progress;
+        };
+
+        // 時間 t (秒) におけるレーンの Bounds (x, width) を算出 (SLIDEノーツ対応)
+        const getBoundsAtTime = (note, t) => {
+            if (note.type !== 'slide' || note.duration <= 0 || note.startLane === note.endLane) {
+                return this.getLaneBounds(note.lane);
+            }
+            const prog = Math.max(0, Math.min(1, (t - note.time) / note.duration));
+            const laneFloat = note.startLane + (note.endLane - note.startLane) * prog;
+            const l0 = Math.floor(laneFloat);
+            const l1 = Math.min(this.lanesCount - 1, l0 + 1);
+            const ratio = laneFloat - l0;
+
+            const b0 = this.getLaneBounds(l0);
+            const b1 = this.getLaneBounds(l1);
+
+            return {
+                x: b0.x + (b1.x - b0.x) * ratio,
+                width: b0.width + (b1.width - b0.width) * ratio
+            };
+        };
+
         for (let i = 0; i < this.chart.length; i++) {
             const note = this.chart[i];
-            if (note.hit || note.missed) continue;
+            if (note.completed || note.missed) continue;
 
-            const timeDiff = note.time - currentTime;
-            if (timeDiff > this.scrollSpeed || timeDiff < -0.2) continue;
+            const tHead = note.time;
+            const tTail = note.time + (note.duration || 0);
 
-            // 0.0 (出現Y) ~ 1.0 (判定Y) へまっすぐ滑らかに下降
-            const progress = 1 - (timeDiff / this.scrollSpeed);
-            const y = this.spawnY + (this.receptorY - this.spawnY) * progress;
+            const yHeadRaw = getYFromTime(tHead);
+            const yTail = getYFromTime(tTail);
 
-            const bounds = this.getLaneBounds(note.lane);
-            const isOrange = (note.lane % 2 === 0);
-            const x = bounds.x + 6;
-            const width = bounds.width - 12;
+            // ホールド中の場合、頭は判定線に固定
+            const yHead = note.holding ? this.receptorY : yHeadRaw;
 
-            // サイバークリスタルノーツ (白い発光コア付き)
-            const grad = this.ctx.createLinearGradient(x, y - noteHeight / 2, x, y + noteHeight / 2);
-            if (isOrange) {
-                grad.addColorStop(0, '#ffa040');
-                grad.addColorStop(0.5, '#ff6b00');
-                grad.addColorStop(1, '#cc4400');
-            } else {
-                grad.addColorStop(0, '#00f5ff'); // 奇数レーンはスタイリッシュなネオンシアン
-                grad.addColorStop(0.5, '#00aeff');
-                grad.addColorStop(1, '#0055cc');
+            // 画面外チェック
+            if (yHead < this.spawnY - 50 || yTail > this.receptorY + 80) {
+                if (note.type === 'tap' && (tHead - currentTime > this.scrollSpeed || tHead - currentTime < -0.2)) {
+                    continue;
+                }
             }
 
-            this.ctx.save();
-            this.ctx.fillStyle = grad;
-            
-            // コンボに応じたグロー強化
-            const comboScale = Math.min(2.5, 1.0 + (this.combo / 50.0));
-            this.ctx.shadowColor = isOrange ? '#ff6b00' : '#00e5ff';
-            this.ctx.shadowBlur = 14 * comboScale;
+            // ------------------------------------------------------------------
+            // 1. HOLD / SLIDE ノーツのネオンロング帯 (Body) の描画
+            // ------------------------------------------------------------------
+            if ((note.type === 'hold' || note.type === 'slide') && note.duration > 0) {
+                if (yHead >= this.spawnY - 50 && yTail <= this.receptorY + 80) {
+                    this.ctx.save();
 
-            // 本体
-            this.roundRect(this.ctx, x, y - noteHeight / 2, width, noteHeight, 6, true, false);
+                    const steps = 14; // スライド曲線を滑らかに補間する分割数
+                    const points = [];
 
-            // ホワイト発光コアライン (中央)
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            this.ctx.shadowColor = '#ffffff';
-            this.ctx.shadowBlur = 8;
-            this.ctx.fillRect(x + 8, y - 2, width - 16, 4);
-            this.ctx.restore();
+                    for (let s = 0; s <= steps; s++) {
+                        const stepRatio = s / steps;
+                        // tHead (下) 〜 tTail (上)
+                        const tCurr = tHead + (tTail - tHead) * stepRatio;
+                        let yCurr = getYFromTime(tCurr);
 
-            // 上部のハイライト
-            this.ctx.save();
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            this.ctx.fillRect(x + 4, y - noteHeight / 2 + 2, width - 8, 2);
-            this.ctx.restore();
+                        if (note.holding && tCurr < currentTime) {
+                            yCurr = this.receptorY;
+                        }
 
-            this.ctx.shadowBlur = 0;
+                        const bCurr = getBoundsAtTime(note, tCurr);
+                        const margin = 10;
+                        points.push({
+                            xLeft: bCurr.x + margin,
+                            xRight: bCurr.x + bCurr.width - margin,
+                            y: yCurr
+                        });
+                    }
+
+                    // 帯ポリゴンのパス生成
+                    this.ctx.beginPath();
+                    // 左側を下から上へ
+                    this.ctx.moveTo(points[0].xLeft, points[0].y);
+                    for (let s = 1; s <= steps; s++) {
+                        this.ctx.lineTo(points[s].xLeft, points[s].y);
+                    }
+                    // 右側を上から下へ
+                    for (let s = steps; s >= 0; s--) {
+                        this.ctx.lineTo(points[s].xRight, points[s].y);
+                    }
+                    this.ctx.closePath();
+
+                    // ネオングラデーション
+                    const grad = this.ctx.createLinearGradient(0, yTail, 0, yHead);
+                    if (note.type === 'slide') {
+                        grad.addColorStop(0, 'rgba(0, 229, 255, 0.7)');
+                        grad.addColorStop(0.5, 'rgba(255, 0, 229, 0.8)');
+                        grad.addColorStop(1, 'rgba(0, 229, 255, 0.9)');
+                    } else {
+                        grad.addColorStop(0, 'rgba(255, 170, 0, 0.6)');
+                        grad.addColorStop(0.5, 'rgba(118, 255, 3, 0.75)');
+                        grad.addColorStop(1, 'rgba(255, 170, 0, 0.85)');
+                    }
+
+                    this.ctx.fillStyle = grad;
+                    this.ctx.shadowColor = (note.type === 'slide') ? '#ff00e5' : '#ffaa00';
+                    this.ctx.shadowBlur = note.holding ? 22 : 12;
+                    this.ctx.fill();
+
+                    // ホールド中に帯の中に走るサイバーネオンパルス光線
+                    if (note.holding) {
+                        this.ctx.strokeStyle = '#ffffff';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.shadowColor = '#ffffff';
+                        this.ctx.shadowBlur = 15;
+                        this.ctx.beginPath();
+                        const midPoints = points.map(p => ({ x: (p.xLeft + p.xRight) / 2, y: p.y }));
+                        this.ctx.moveTo(midPoints[0].x, midPoints[0].y);
+                        for (let s = 1; s <= steps; s++) {
+                            this.ctx.lineTo(midPoints[s].x, midPoints[s].y);
+                        }
+                        this.ctx.stroke();
+                    }
+
+                    this.ctx.restore();
+                }
+            }
+
+            // ------------------------------------------------------------------
+            // 2. ノーツの頭 (Head) / 通常タップノーツの描画
+            // ------------------------------------------------------------------
+            if (!note.headHit && yHeadRaw >= this.spawnY - 20 && yHeadRaw <= this.receptorY + 40) {
+                const bHead = getBoundsAtTime(note, tHead);
+                const isOrange = (note.startLane % 2 === 0);
+                const x = bHead.x + 6;
+                const width = bHead.width - 12;
+
+                const grad = this.ctx.createLinearGradient(x, yHeadRaw - noteHeight / 2, x, yHeadRaw + noteHeight / 2);
+                if (note.type === 'slide') {
+                    grad.addColorStop(0, '#00ffff');
+                    grad.addColorStop(0.5, '#ff00ea');
+                    grad.addColorStop(1, '#9000ff');
+                } else if (note.type === 'hold') {
+                    grad.addColorStop(0, '#ffff00');
+                    grad.addColorStop(0.5, '#ffaa00');
+                    grad.addColorStop(1, '#ff3300');
+                } else {
+                    if (isOrange) {
+                        grad.addColorStop(0, '#ffa040');
+                        grad.addColorStop(0.5, '#ff6b00');
+                        grad.addColorStop(1, '#cc4400');
+                    } else {
+                        grad.addColorStop(0, '#00f5ff');
+                        grad.addColorStop(0.5, '#00aeff');
+                        grad.addColorStop(1, '#0055cc');
+                    }
+                }
+
+                this.ctx.save();
+                this.ctx.fillStyle = grad;
+                const comboScale = Math.min(2.5, 1.0 + (this.combo / 50.0));
+                this.ctx.shadowColor = (note.type === 'slide') ? '#ff00ea' : (isOrange ? '#ff6b00' : '#00e5ff');
+                this.ctx.shadowBlur = 14 * comboScale;
+
+                // 本体
+                this.roundRect(this.ctx, x, yHeadRaw - noteHeight / 2, width, noteHeight, 6, true, false);
+
+                // 発光コア
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                this.ctx.shadowColor = '#ffffff';
+                this.ctx.shadowBlur = 8;
+                this.ctx.fillRect(x + 8, yHeadRaw - 2, width - 16, 4);
+
+                // HOLD / SLIDE ノーツのテキストラベル
+                if (note.type === 'slide') {
+                    const arrow = (note.endLane > note.startLane) ? 'SLIDE ➔' : '⬅ SLIDE';
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = '900 11px Orbitron, sans-serif';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(arrow, x + width / 2, yHeadRaw);
+                } else if (note.type === 'hold') {
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = '900 11px Orbitron, sans-serif';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText('HOLD', x + width / 2, yHeadRaw);
+                }
+
+                this.ctx.restore();
+            }
+
+            // ------------------------------------------------------------------
+            // 3. ホールドノーツの尾 (Tail Cap) 描画
+            // ------------------------------------------------------------------
+            if ((note.type === 'hold' || note.type === 'slide') && note.duration > 0) {
+                if (yTail >= this.spawnY - 20 && yTail <= this.receptorY + 40) {
+                    const bTail = getBoundsAtTime(note, tTail);
+                    const tx = bTail.x + 8;
+                    const tWidth = bTail.width - 16;
+                    const tailH = 10;
+
+                    this.ctx.save();
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                    this.ctx.shadowColor = (note.type === 'slide') ? '#00e5ff' : '#ffaa00';
+                    this.ctx.shadowBlur = 12;
+                    this.roundRect(this.ctx, tx, yTail - tailH / 2, tWidth, tailH, 4, true, false);
+                    this.ctx.restore();
+                }
+            }
         }
     }
 

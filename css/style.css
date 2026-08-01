@@ -326,6 +326,61 @@ html, body {
     animation: combo-bounce 0.15s ease-out;
 }
 
+/* コンボレベル連動スーパーエフェクト (Level 1: 20+, Level 2: 50+, Level 3: 100+, Level 4: 200+) */
+.combo-container.fever-level-1::before {
+    border-color: #00e5ff;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.4), inset 0 0 25px rgba(0, 229, 255, 0.4);
+}
+.combo-container.fever-level-1 .combo-num {
+    color: #00ffff;
+    text-shadow: 0 0 25px rgba(0, 229, 255, 0.9), 0 0 40px rgba(0, 229, 255, 0.6);
+}
+
+.combo-container.fever-level-2::before {
+    border-color: #ffea00;
+    box-shadow: 0 0 35px rgba(255, 234, 0, 0.6), inset 0 0 35px rgba(255, 234, 0, 0.6);
+}
+.combo-container.fever-level-2 .combo-num {
+    color: #ffea00;
+    text-shadow: 0 0 30px rgba(255, 234, 0, 0.95), 0 0 50px rgba(255, 170, 0, 0.8);
+}
+
+.combo-container.fever-level-3::before {
+    border-color: #ff00ea;
+    box-shadow: 0 0 45px rgba(255, 0, 234, 0.8), inset 0 0 45px rgba(255, 0, 234, 0.8);
+    animation: combo-ring-spin 4s linear infinite;
+}
+.combo-container.fever-level-3 .combo-num {
+    color: #ff77ff;
+    text-shadow: 0 0 35px rgba(255, 0, 234, 1.0), 0 0 60px rgba(255, 0, 234, 0.9);
+}
+
+.combo-container.fever-level-4::before {
+    border-color: #00ffaa;
+    box-shadow: 0 0 60px rgba(0, 255, 170, 1.0), inset 0 0 60px rgba(0, 255, 170, 1.0);
+    animation: combo-ring-spin 2s linear infinite;
+}
+.combo-container.fever-level-4 .combo-num {
+    background: linear-gradient(45deg, #00ffff, #ff00ff, #ffea00, #00ffaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.9);
+}
+
+/* 画面バイブレーション (Hit時のスクリーンシェイク) */
+@keyframes screen-shake-hit {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-4px, 3px) rotate(-0.5deg); }
+    40% { transform: translate(4px, -3px) rotate(0.5deg); }
+    60% { transform: translate(-3px, -2px); }
+    80% { transform: translate(3px, 2px); }
+    100% { transform: translate(0, 0); }
+}
+
+.game-viewport.shake {
+    animation: screen-shake-hit 0.12s ease-in-out;
+}
+
 @keyframes combo-ring-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -1102,4 +1157,55 @@ html, body {
         height: 110px; /* タップしやすく縦幅拡張 */
         padding-bottom: 14px;
     }
+}
+
+/* ==========================================================================
+   WEB Embed Mode & Toast Notification Styles
+   ========================================================================== */
+.embed-btn:hover {
+    background: rgba(0, 229, 255, 0.25) !important;
+    border-color: #00e5ff !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
+
+/* トースト通知 (画面中央上部) */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, rgba(15, 17, 26, 0.95), rgba(0, 229, 255, 0.25));
+    border: 1px solid #00e5ff;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(0, 229, 255, 0.5);
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-notification.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* 埋め込みモード (`body.is-embed`) */
+body.is-embed .top-header {
+    height: 44px;
+    background: rgba(10, 12, 18, 0.95);
+    border-bottom: 1px solid rgba(0, 229, 255, 0.4);
+}
+
+body.is-embed .header-right {
+    display: none; /* 💎通貨や設定など不要なアイコンを隠す */
+}
+
+body.is-embed .app-container {
+    max-width: 100%;
+    height: 100vh;
 }

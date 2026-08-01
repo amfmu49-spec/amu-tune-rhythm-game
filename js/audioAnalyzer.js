@@ -251,12 +251,45 @@ class AudioAnalyzer {
                 currentLane = (currentLane + step + maxLanes) % maxLanes;
             }
 
+            // ノーツのタイプ決定 (tap, hold, slide)
+            let noteType = 'tap';
+            let duration = note.duration || 0;
+            let endLane = currentLane;
+
+            // ボーカルイベントや間隔に余裕がある場合に HOLD や SLIDE ノーツを割り当てる
+            if (note.isHold && duration >= 0.5) {
+                // 50%の確率で SLIDE (左右移動), 50%で固定 HOLD
+                if (Math.random() < 0.5 && timeDiff >= duration + 0.3) {
+                    noteType = 'slide';
+                    // 現在レーンから1~2ステップ移動する方向を選択
+                    const moveOffset = (Math.random() < 0.5 ? 1 : -1) * (Math.random() < 0.6 ? 1 : 2);
+                    endLane = Math.max(0, Math.min(maxLanes - 1, currentLane + moveOffset));
+                    if (endLane === currentLane) {
+                        endLane = (currentLane > 2) ? currentLane - 1 : currentLane + 1;
+                    }
+                } else {
+                    noteType = 'hold';
+                }
+            } else if (timeDiff >= 0.8 && Math.random() < 0.3) {
+                // 通常ビートでも時々ショートホールド / スライドノーツを発生させる
+                duration = Math.min(timeDiff * 0.6, 1.2);
+                if (Math.random() < 0.5) {
+                    noteType = 'slide';
+                    const moveOffset = (currentLane >= 2) ? -1 : 1;
+                    endLane = Math.max(0, Math.min(maxLanes - 1, currentLane + moveOffset));
+                } else {
+                    noteType = 'hold';
+                }
+            }
+
             finalChart.push({
                 id: idCounter++,
                 time: parseFloat(note.time.toFixed(3)),
                 lane: currentLane,
-                isHold: note.isHold || false,
-                duration: parseFloat((note.duration || 0).toFixed(3))
+                endLane: endLane,
+                type: noteType,
+                isHold: noteType !== 'tap',
+                duration: parseFloat(duration.toFixed(3))
             });
         }
 
