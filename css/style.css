@@ -1295,26 +1295,25 @@ body.is-embed .app-container {
 
 .modal-banner-wrapper {
     width: 100%;
-    padding: 10px 0;
-    margin: 0 0 10px 0;
+    padding: 0;
+    margin: 0 0 12px 0;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     background: transparent !important;
     border: none !important;
-    overflow: visible !important;
 }
 
 .modal-banner-img {
     width: 100% !important;
     height: auto !important;
-    max-height: 96px !important; /* 100% 標準サイズ */
-    transform: scale(1.0);
+    max-width: 100% !important;
+    max-height: none !important; /* 横幅を下のボタン端と一致する100%サイズに広げる */
     display: block !important;
     border-radius: 8px;
-    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.85));
+    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.9));
     transition: transform 0.2s ease;
-    object-fit: contain;
 }
 
 .modal-banner-img:hover {
