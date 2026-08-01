@@ -1209,3 +1209,36 @@ body.is-embed .app-container {
     max-width: 100%;
     height: 100vh;
 }
+
+/* ==========================================================================
+   AMU tune Official Logo Banner Styles
+   ========================================================================== */
+.header-logo-img {
+    height: 25px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.65));
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.header-logo-img:hover {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 14px rgba(255, 140, 0, 0.95));
+}
+
+.modal-banner-wrapper {
+    width: 100%;
+    padding: 14px 16px 4px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.12), transparent);
+    border-bottom: 1px solid rgba(255, 107, 0, 0.15);
+}
+
+.modal-banner-img {
+    max-width: 85%;
+    height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.7));
+}
