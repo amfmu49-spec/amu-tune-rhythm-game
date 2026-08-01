@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameEngine.isPlaying) {
             gameEngine.pause();
         }
+        renderPlayHistory();
         ui.showLoadModal();
     });
 
@@ -350,6 +351,109 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==========================================================================
+    // 🕒 プレイ履歴 (localStorage) 管理・描画処理
+    // ==========================================================================
+    const PLAY_HISTORY_KEY = 'amutune_play_history';
+    const MAX_HISTORY_ITEMS = 10;
+
+    const getPlayHistory = () => {
+        try {
+            const raw = localStorage.getItem(PLAY_HISTORY_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            console.warn('Failed to load play history:', e);
+            return [];
+        }
+    };
+
+    const saveToPlayHistory = (item) => {
+        if (!item || (!item.uuid && !item.mp3Url)) return;
+        try {
+            let history = getPlayHistory();
+            history = history.filter(h => {
+                if (item.uuid && h.uuid === item.uuid) return false;
+                if (item.mp3Url && h.mp3Url === item.mp3Url) return false;
+                return true;
+            });
+            history.unshift({
+                uuid: item.uuid || null,
+                mp3Url: item.mp3Url || null,
+                title: item.title || 'Suno Track',
+                artist: item.artist || 'AI Music',
+                coverUrl: item.coverUrl || (item.uuid ? `https://cdn1.suno.ai/image_${item.uuid}.png` : ''),
+                timestamp: Date.now()
+            });
+            if (history.length > MAX_HISTORY_ITEMS) {
+                history = history.slice(0, MAX_HISTORY_ITEMS);
+            }
+            localStorage.setItem(PLAY_HISTORY_KEY, JSON.stringify(history));
+            renderPlayHistory();
+        } catch (e) {
+            console.warn('Failed to save play history:', e);
+        }
+    };
+
+    const clearPlayHistory = () => {
+        try {
+            localStorage.removeItem(PLAY_HISTORY_KEY);
+            renderPlayHistory();
+            showToast('🗑 プレイ履歴を消去しました');
+        } catch (e) {
+            console.warn('Failed to clear play history:', e);
+        }
+    };
+
+    const renderPlayHistory = () => {
+        const historyListEl = document.getElementById('history-list');
+        const historyCountEl = document.getElementById('history-count');
+        if (!historyListEl) return;
+
+        const history = getPlayHistory();
+        if (historyCountEl) {
+            historyCountEl.textContent = `(${history.length})`;
+        }
+
+        if (history.length === 0) {
+            historyListEl.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-muted); padding: 8px 0; text-align: center; width: 100%;">まだ履歴はありません。Sunoの曲を遊ぶと自動保存されます！</div>';
+            return;
+        }
+
+        historyListEl.innerHTML = '';
+        history.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'history-card';
+
+            const coverStyle = item.coverUrl ? `style="background-image: url('${item.coverUrl}')"` : '';
+            const coverContent = item.coverUrl ? '' : '🎵';
+
+            card.innerHTML = `
+                <div class="history-cover" ${coverStyle}>${coverContent}</div>
+                <div class="history-title" title="${item.title}">${item.title}</div>
+                <div class="history-artist">${item.artist || 'Suno AI'}</div>
+                <button class="history-play-btn">▶ 再生</button>
+            `;
+
+            card.addEventListener('click', async () => {
+                if (item.uuid) {
+                    await loadByUuid(item.uuid);
+                } else if (item.mp3Url) {
+                    await processImportedString(JSON.stringify({ mp3Url: item.mp3Url, title: item.title, coverUrl: item.coverUrl }));
+                }
+            });
+
+            historyListEl.appendChild(card);
+        });
+    };
+
+    document.getElementById('clear-history-btn')?.addEventListener('click', () => {
+        if (confirm('プレイ履歴をすべて消去しますか？')) {
+            clearPlayHistory();
+        }
+    });
+
+    renderPlayHistory();
+
+    // ==========================================================================
     // 汎用文字列（JSON・URL・共有テキスト）取り込み処理
     // ==========================================================================
     const processImportedString = async (str) => {
@@ -457,10 +561,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (meta.coverUrl) {
                     setSongCoverArt(meta.coverUrl);
                 }
+                saveToPlayHistory({
+                    uuid: uuid,
+                    title: meta.title || document.getElementById('song-title-display')?.textContent || 'Suno Track',
+                    artist: meta.artist || document.getElementById('song-artist-display')?.textContent || 'AI Track',
+                    coverUrl: meta.coverUrl || `https://cdn1.suno.ai/image_${uuid}.png`
+                });
             }).catch(e => console.warn('HTML scrape fallback:', e));
         } catch (e) {
             console.warn('Cover set fallback:', e);
         }
+
+        // 早期に履歴に初期保存
+        saveToPlayHistory({
+            uuid: uuid,
+            title: document.getElementById('song-title-display')?.textContent || 'Suno Track',
+            artist: document.getElementById('song-artist-display')?.textContent || 'AI Track',
+            coverUrl: `https://cdn1.suno.ai/image_${uuid}.png`
+        });
 
         // 進捗アニメ（実際のサイズが不明なので推定アニメ）
         let fakePct = 0;

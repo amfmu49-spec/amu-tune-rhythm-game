@@ -152,6 +152,19 @@
                     <textarea id="bookmarklet-code" readonly style="display: none;"></textarea>
                 </div>
 
+                <!-- 🕒 最近遊んだ曲 (プレイ履歴) セクション -->
+                <div id="play-history-section" style="margin-bottom: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 12px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.82rem; font-weight: bold; color: #00e5ff; display: flex; align-items: center; gap: 4px;">
+                            🕒 最近遊んだ曲 <span id="history-count" style="font-size: 0.7rem; color: var(--text-muted);">(0)</span>
+                        </span>
+                        <button id="clear-history-btn" style="background: none; border: none; color: #ff5252; font-size: 0.7rem; cursor: pointer; text-decoration: underline; opacity: 0.8;">履歴を消去</button>
+                    </div>
+                    <div id="history-list" class="history-list-container" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); padding: 8px 0; text-align: center; width: 100%;">まだ履歴はありません。Sunoの曲を遊ぶと自動保存されます！</div>
+                    </div>
+                </div>
+
                     <!-- 難易度設定 & スタートボタン -->
                     <div class="modal-controls">
                         <div class="diff-selector">
