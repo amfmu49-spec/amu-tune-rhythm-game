@@ -1228,21 +1228,22 @@ body.is-embed .app-container {
 
 .modal-banner-wrapper {
     width: 100%;
-    padding: 8px 0px 8px 0px;
+    padding: 0 0 12px 0;
+    margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.15), transparent);
-    border-bottom: 1px solid rgba(255, 107, 0, 0.18);
+    background: transparent !important;
+    border: none !important;
 }
 
 .modal-banner-img {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    max-height: 80px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.85));
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    border-radius: 8px;
+    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.9));
     transition: transform 0.2s ease;
 }
 

@@ -519,12 +519,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const sunoId = urlParams.get('suno_id') || urlParams.get('uuid') || urlParams.get('mp3uuid');
         const songKey = urlParams.get('song');
+        const songArtist = urlParams.get('artist');
+        const songCover = urlParams.get('cover');
         const diff = urlParams.get('diff');
         const isEmbed = urlParams.get('embed') === 'true';
         const autostart = urlParams.get('autostart') === 'true';
 
         if (isEmbed) {
             document.body.classList.add('is-embed');
+        }
+
+        if (songKey) {
+            const titleDisp = document.getElementById('song-title-display');
+            if (titleDisp) titleDisp.textContent = songKey;
+        }
+
+        if (songArtist) {
+            const artistDisp = document.getElementById('song-artist-display');
+            if (artistDisp) artistDisp.textContent = songArtist;
+        }
+
+        if (songCover) {
+            setSongCoverArt(songCover);
         }
 
         if (diff) {

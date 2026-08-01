@@ -220,6 +220,7 @@ class GameEngine {
 
         const handleTouchMoveOrStart = (e) => {
             e.preventDefault();
+            this.isTouchActive = (e.touches && e.touches.length > 0);
             const currentTouchLanes = new Set();
 
             for (let i = 0; i < e.touches.length; i++) {
@@ -258,6 +259,7 @@ class GameEngine {
 
         const handleTouchEnd = (e) => {
             e.preventDefault();
+            this.isTouchActive = (e.touches && e.touches.length > 0);
             for (const [id, lane] of activeTouchLanes.entries()) {
                 let found = false;
                 for (let i = 0; i < e.touches.length; i++) {
@@ -269,6 +271,12 @@ class GameEngine {
                 if (!found) {
                     this.triggerLaneRelease(lane);
                     activeTouchLanes.delete(id);
+                }
+            }
+            if (!e.touches || e.touches.length === 0) {
+                this.isTouchActive = false;
+                for (let l = 0; l < this.lanesCount; l++) {
+                    this.triggerLaneRelease(l);
                 }
             }
         };
@@ -435,9 +443,8 @@ class GameEngine {
 
             // 3. ホールド維持状態のチェック
             if (note.holding) {
-                // 画面上に何らかのタッチ・キー入力が継続しているかチェック
-                // (スライドノーツは最初に当たった後、画面を押している限り確実に最後までスライド移動継続！)
-                const anyPressed = Object.values(this.activeKeys).some(Boolean);
+                // 画面上に何らかのタッチ・キー入力が継続しているかチェック (スマホタッチ中も完全維持)
+                const anyPressed = Object.values(this.activeKeys).some(Boolean) || Boolean(this.isTouchActive);
 
                 if (anyPressed) {
                     note.lastHoldTime = currentTime;
@@ -829,7 +836,7 @@ class GameEngine {
         this.ctx.fillStyle = 'rgba(0, 229, 255, 0.45)';
         this.ctx.font = '700 9px Orbitron, sans-serif';
 
-        let systemStatus = "STATUS: AMU ENGINE v1.7.1";
+        let systemStatus = "STATUS: AMU ENGINE v1.8.0";
         const level = this.getComboLevel();
         if (level === 4) systemStatus = "STATUS: ULTIMATE GOD MODE ⚡";
         else if (level === 3) systemStatus = "STATUS: HYPER OVERDRIVE 🔥";
@@ -839,7 +846,7 @@ class GameEngine {
         // 画面左下の安全領域へ描画
         const hudBottomY = this.receptorY + 45;
         this.ctx.fillText(systemStatus, 12, hudBottomY);
-        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.7.1", 12, hudBottomY + 12);
+        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.8.0", 12, hudBottomY + 12);
 
         this.ctx.restore();
     }
