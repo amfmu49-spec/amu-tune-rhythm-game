@@ -1228,7 +1228,7 @@ body.is-embed .app-container {
 
 .modal-banner-wrapper {
     width: 100%;
-    padding: 12px 14px 6px 14px;
+    padding: 8px 0px 8px 0px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1237,15 +1237,17 @@ body.is-embed .app-container {
 }
 
 .modal-banner-img {
-    max-width: 90%;
-    height: 48px;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 80px;
     object-fit: contain;
     filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.85));
     transition: transform 0.2s ease;
 }
 
 .modal-banner-img:hover {
-    transform: scale(1.03);
+    transform: scale(1.02);
 }
 
 /* 🌌 レール背景ジャケット画像カバー (オシャレなダークサイバーオーバーレイ) */
