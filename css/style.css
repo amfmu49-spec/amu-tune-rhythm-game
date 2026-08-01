@@ -1234,9 +1234,9 @@ body.is-embed .app-container {
 }
 
 .modal-banner-img {
-    height: 96px !important;
-    width: auto !important;
-    max-width: none !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
     display: block !important;
     border-radius: 8px;
     filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.9));
