@@ -1247,6 +1247,15 @@ body.is-embed .app-container {
     transform: scale(1.02);
 }
 
+.bookmarklet-note {
+    font-size: 0.8rem;
+    color: #a0a0a0;
+    text-align: center;
+    margin-top: 6px;
+    font-family: var(--font-body);
+    opacity: 0.9;
+}
+
 /* 🌌 レール背景ジャケット画像カバー (オシャレなダークサイバーオーバーレイ) */
 .game-bg-cover {
     position: absolute;
