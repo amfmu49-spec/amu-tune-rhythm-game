@@ -281,6 +281,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const diff = ui.selectedDifficulty || 'NORMAL';
+        const isSurvival = (ui.selectedGameMode === 'survival');
+        gameEngine.isSurvivalMode = isSurvival;
+
         const srtEntries = uploadedSrtText ? SRTParser.parse(uploadedSrtText) : [];
         const chart = audioAnalyzer.generateChart(uploadedMp3Buffer, srtEntries, diff);
 
@@ -514,6 +517,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         startBtn.onclick = null;
                         startBtn.disabled = false;
                         const diff = ui.selectedDifficulty || 'NORMAL';
+                        const isSurvival = (ui.selectedGameMode === 'survival');
+                        gameEngine.isSurvivalMode = isSurvival;
+
                         const srtEntries = uploadedSrtText ? SRTParser.parse(uploadedSrtText) : [];
                         const chart = audioAnalyzer.generateChart(uploadedMp3Buffer, srtEntries, diff);
                         gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff);

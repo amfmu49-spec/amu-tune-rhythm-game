@@ -94,11 +94,21 @@ class GameEngine {
     }
 
     resetGameStats() {
-        this.score = 0;
         this.combo = 0;
         this.maxCombo = 0;
         this.hp = 100;
         this.counts = { perfect: 0, great: 0, good: 0, miss: 0 };
+
+        // モード別の初期スコア設定
+        if (this.isSurvivalMode) {
+            const startScores = { EASY: 70000, NORMAL: 50000, HARD: 30000, EXPERT: 20000 };
+            this.score = startScores[this.difficulty] || 50000;
+        } else {
+            this.score = 0;
+        }
+
+        const viewport = document.querySelector('.game-viewport');
+        if (viewport) viewport.classList.remove('red-warning-pulse');
 
         if (this.onScoreUpdate) this.onScoreUpdate(this.score);
         if (this.onComboUpdate) this.onComboUpdate(this.combo);
@@ -430,14 +440,7 @@ class GameEngine {
             // 2. 開始時間を過ぎても押し始めなかった場合の MISS 判定
             if (!note.headHit && !note.holding && (currentTime - note.time > 0.140)) {
                 note.missed = true;
-                this.combo = 0;
-                const hpLoss = { EASY: 1.5, NORMAL: 3.0, HARD: 6.0, EXPERT: 10.0 }[this.difficulty] || 5;
-                this.hp = Math.max(0, this.hp - hpLoss);
-                this.counts.miss++;
-                this.addJudgmentPopup('MISS', reqLane, 0);
-                if (this.onJudgment) this.onJudgment('MISS');
-                if (this.onComboUpdate) this.onComboUpdate(this.combo);
-                if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                this.applyMissPenalty(reqLane, 'MISS');
                 continue;
             }
 
@@ -494,14 +497,7 @@ class GameEngine {
                         // 途中で完全に離してしまったため MISS !
                         note.holding = false;
                         note.missed = true;
-                        this.combo = 0;
-                        const hpLoss = { EASY: 1.5, NORMAL: 3.0, HARD: 6.0, EXPERT: 10.0 }[this.difficulty] || 5;
-                        this.hp = Math.max(0, this.hp - hpLoss);
-                        this.counts.miss++;
-                        this.addJudgmentPopup('MISS (RELEASED)', reqLane, 0);
-                        if (this.onJudgment) this.onJudgment('MISS');
-                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
-                        if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                        this.applyMissPenalty(reqLane, 'RELEASED');
                     }
                     continue;
                 }
@@ -1355,19 +1351,54 @@ class GameEngine {
         for (const note of this.chart) {
             if (!note.hit && !note.missed && (currentTime - note.time) > 0.160) {
                 note.missed = true;
-                this.combo = 0;
-
-                // 難易度に応じたマイルドなライフ減少量
-                const hpLoss = { EASY: 1.5, NORMAL: 3.0, HARD: 6.0, EXPERT: 10.0 }[this.difficulty] || 5;
-                this.hp = Math.max(0, this.hp - hpLoss);
-                
-                this.counts.miss++;
-
-                if (this.onJudgment) this.onJudgment('MISS');
-                this.addJudgmentPopup('MISS', note.lane, 0);
-                if (this.onComboUpdate) this.onComboUpdate(this.combo);
-                if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                this.applyMissPenalty(note.lane, 'MISS');
             }
         }
+    }
+
+    // ⚠️ 減点サバイバルモード対応: MISS 減点 ＆ ゲームオーバー処理
+    applyMissPenalty(lane, reason = 'MISS') {
+        const hpLoss = { EASY: 1.5, NORMAL: 3.0, HARD: 6.0, EXPERT: 10.0 }[this.difficulty] || 5;
+        this.hp = Math.max(0, this.hp - hpLoss);
+        this.counts.miss++;
+        this.combo = 0;
+
+        if (this.isSurvivalMode) {
+            const penaltyMap = { EASY: 3000, NORMAL: 5000, HARD: 7000, EXPERT: 10000 };
+            const loss = penaltyMap[this.difficulty] || 5000;
+            this.score = Math.max(0, this.score - loss);
+            this.addJudgmentPopup(`${reason} -${loss}`, lane, 0);
+
+            // スコア 0 以下で即時ゲームオーバー ＆ 楽曲強制ストップ！
+            if (this.score <= 0) {
+                this.triggerGameOver();
+            }
+        } else {
+            this.addJudgmentPopup(reason, lane, 0);
+        }
+
+        if (this.onJudgment) this.onJudgment('MISS');
+        if (this.onComboUpdate) this.onComboUpdate(this.combo);
+        if (this.onHpUpdate) this.onHpUpdate(this.hp);
+        if (this.onScoreUpdate) this.onScoreUpdate(this.score);
+    }
+
+    triggerGameOver() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+
+        // 🎵 楽曲を即座に強制ストップ！
+        if (this.audioSource) {
+            try { this.audioSource.stop(); } catch(e){}
+        }
+
+        const viewport = document.querySelector('.game-viewport');
+        if (viewport) viewport.classList.remove('red-warning-pulse');
+
+        this.addJudgmentPopup('GAME OVER', 2, 0);
+
+        setTimeout(() => {
+            if (this.onGameEnd) this.onGameEnd(true); // isGameOver = true
+        }, 1200);
     }
 }

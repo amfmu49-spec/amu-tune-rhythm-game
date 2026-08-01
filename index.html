@@ -152,17 +152,30 @@
                     <textarea id="bookmarklet-code" readonly style="display: none;"></textarea>
                 </div>
 
-                <!-- 難易度設定 & スタートボタン -->
-                <div class="modal-controls">
-                    <div class="diff-selector">
-                        <label style="color: var(--text-muted); font-size: 0.8rem;">難易度:</label>
-                        <div class="diff-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
-                            <button class="diff-btn" data-diff="EASY">EASY</button>
-                            <button class="diff-btn active" data-diff="NORMAL">NORMAL</button>
-                            <button class="diff-btn" data-diff="HARD">HARD</button>
-                            <button class="diff-btn" data-diff="EXPERT">EXPERT</button>
+                    <!-- 難易度設定 & スタートボタン -->
+                    <div class="modal-controls">
+                        <div class="diff-selector">
+                            <label style="color: var(--text-muted); font-size: 0.8rem;">難易度:</label>
+                            <div class="diff-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
+                                <button class="diff-btn" data-diff="EASY">EASY</button>
+                                <button class="diff-btn active" data-diff="NORMAL">NORMAL</button>
+                                <button class="diff-btn" data-diff="HARD">HARD</button>
+                                <button class="diff-btn" data-diff="EXPERT">EXPERT</button>
+                            </div>
                         </div>
-                    </div>
+
+                        <!-- ゲームルール切替 (通常加点 / ⚠️ 減点サバイバル) -->
+                        <div class="mode-selector" style="margin-top: 10px;">
+                            <label style="color: var(--text-muted); font-size: 0.8rem;">ゲームルール:</label>
+                            <div class="mode-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
+                                <button class="mode-rule-btn active" id="mode-normal-btn" data-mode="normal" style="flex: 1; padding: 7px 4px; font-size: 0.75rem; font-weight: bold; background: rgba(0,229,255,0.2); border: 1px solid #00e5ff; border-radius: 6px; color: #fff; cursor: pointer; transition: all 0.2s ease;">
+                                    ✨ 通常 (加点)
+                                </button>
+                                <button class="mode-rule-btn" id="mode-survival-btn" data-mode="survival" style="flex: 1; padding: 7px 4px; font-size: 0.75rem; font-weight: bold; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #a0a0a0; cursor: pointer; transition: all 0.2s ease;">
+                                    ⚠️ 減点 (－サバイバル)
+                                </button>
+                            </div>
+                        </div>
 
                     <button class="start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 13px; font-size: 1.08rem; font-weight: 900; background: linear-gradient(135deg, #00e5ff, #0088ff); border: none; border-radius: 10px; color: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(0,229,255,0.5);">
                         ▶ プレイスタート！
@@ -174,7 +187,7 @@
                     </button>
 
                     <div style="text-align: center; margin-top: 10px; font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-heading);">
-                        AMU TUNE RHYTHM ENGINE v1.9.5 (Build 2026.08)
+                        AMU TUNE RHYTHM ENGINE v2.0.0 (Build 2026.08)
                     </div>
                 </div>
             </div>
@@ -185,11 +198,11 @@
     <div id="toast-notification" class="toast-notification"></div>
 
     <!-- JSモジュールロード -->
-    <script src="js/srtParser.js?v=1.9.0"></script>
-    <script src="js/audioAnalyzer.js?v=1.9.0"></script>
-    <script src="js/gameEngine.js?v=1.9.0"></script>
-    <script src="js/uiManager.js?v=1.9.0"></script>
-    <script src="js/bookmarkletHelper.js?v=1.9.0"></script>
-    <script src="js/app.js?v=1.9.0"></script>
+    <script src="js/srtParser.js?v=2.0.0"></script>
+    <script src="js/audioAnalyzer.js?v=2.0.0"></script>
+    <script src="js/gameEngine.js?v=2.0.0"></script>
+    <script src="js/uiManager.js?v=2.0.0"></script>
+    <script src="js/bookmarkletHelper.js?v=2.0.0"></script>
+    <script src="js/app.js?v=2.0.0"></script>
 </body>
 </html>

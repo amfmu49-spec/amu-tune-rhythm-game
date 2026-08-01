@@ -63,6 +63,32 @@ class UIManager {
                 }
             });
         });
+
+        // ゲームルール切り替え (通常加点 / ⚠️ 減点サバイバル)
+        this.selectedGameMode = 'normal';
+        const modeRuleBtns = document.querySelectorAll('.mode-rule-btn');
+        modeRuleBtns.forEach(btn => {
+            btn?.addEventListener('click', () => {
+                modeRuleBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'rgba(255,255,255,0.06)';
+                    b.style.borderColor = 'rgba(255,255,255,0.15)';
+                    b.style.color = '#a0a0a0';
+                });
+                btn.classList.add('active');
+                const mode = btn.getAttribute('data-mode') || 'normal';
+                this.selectedGameMode = mode;
+                if (mode === 'survival') {
+                    btn.style.background = 'rgba(255, 23, 68, 0.25)';
+                    btn.style.borderColor = '#ff1744';
+                    btn.style.color = '#ffffff';
+                } else {
+                    btn.style.background = 'rgba(0, 229, 255, 0.25)';
+                    btn.style.borderColor = '#00e5ff';
+                    btn.style.color = '#ffffff';
+                }
+            });
+        });
     }
 
     bindEvents() {
