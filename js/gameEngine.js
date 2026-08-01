@@ -407,12 +407,15 @@ class GameEngine {
 
             this.combo++;
             if (this.combo > this.maxCombo) this.maxCombo = this.combo;
-            this.score += scoreAdd + Math.floor(this.combo * 10);
+
+            if (!this.isSurvivalMode) {
+                this.score += scoreAdd + Math.floor(this.combo * 10);
+            }
             this.hp = Math.min(100, this.hp + 2);
             this.counts[result.toLowerCase()]++;
 
             this.createHitParticles(lane, result);
-            this.addJudgmentPopup(result, lane, scoreAdd);
+            this.addJudgmentPopup(result, lane, this.isSurvivalMode ? 0 : scoreAdd);
 
             if (this.onJudgment) this.onJudgment(result);
             if (this.onScoreUpdate) this.onScoreUpdate(this.score);
@@ -476,19 +479,21 @@ class GameEngine {
                 }
 
                 if (!isKeyPressed) {
-                    // 終点付近 (残り 0.14秒以内) で離した場合はホールド成功として扱う！
+                    // 終端付近 (残り 0.14秒以内) で離した場合はホールド成功として扱う！
                     if (currentTime >= note.time + note.duration - 0.140) {
                         note.completed = true;
                         note.hit = true;
                         note.holding = false;
 
                         const fullBonus = 1500 + Math.floor(this.combo * 15);
-                        this.score += fullBonus;
+                        if (!this.isSurvivalMode) {
+                            this.score += fullBonus;
+                        }
                         this.combo++;
                         if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
                         const popupText = note.type === 'slide' ? 'SLIDE COMPLETE!' : 'FULL HOLD!';
-                        this.addJudgmentPopup(popupText, note.endLane, fullBonus);
+                        this.addJudgmentPopup(popupText, note.endLane, this.isSurvivalMode ? 0 : fullBonus);
                         this.createHitParticles(note.endLane, 'PERFECT');
 
                         if (this.onScoreUpdate) this.onScoreUpdate(this.score);
@@ -510,7 +515,9 @@ class GameEngine {
                     this.combo++;
                     if (this.combo > this.maxCombo) this.maxCombo = this.combo;
                     const tickScore = 150 + Math.floor(this.combo * 3);
-                    this.score += tickScore;
+                    if (!this.isSurvivalMode) {
+                        this.score += tickScore;
+                    }
                     this.hp = Math.min(100, this.hp + 0.5);
 
                     this.createHoldParticles(reqLane, note.type);
@@ -526,6 +533,19 @@ class GameEngine {
                     note.holding = false;
 
                     const fullBonus = 1500 + Math.floor(this.combo * 15);
+                    if (!this.isSurvivalMode) {
+                        this.score += fullBonus;
+                    }
+                    this.combo++;
+                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+                    const popupText = note.type === 'slide' ? 'SLIDE COMPLETE!' : 'FULL HOLD!';
+                    this.addJudgmentPopup(popupText, note.endLane, this.isSurvivalMode ? 0 : fullBonus);
+                    this.createHitParticles(note.endLane, 'PERFECT');
+
+                    if (this.onScoreUpdate) this.onScoreUpdate(this.score);
+                    if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                }
                     this.score += fullBonus;
                     this.combo++;
                     if (this.combo > this.maxCombo) this.maxCombo = this.combo;
