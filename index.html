@@ -144,21 +144,20 @@
 
     <!-- 楽曲読み込み / モード選択 モーダル -->
     <div class="modal-overlay active" id="load-modal">
-        <div class="modal-card" style="max-width: 400px; padding: 16px;">
-            <!-- 🎨 公式 AMU tune ロゴバナー ＆ バージョン -->
-            <div class="modal-banner-wrapper" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 8px;">
-                <img src="assets/amu-tune-logo-banner.png" alt="AMU tune" class="modal-banner-img">
-                <span style="font-size: 0.65rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 2px 10px; border-radius: 10px;">v1.6.0</span>
+        <div class="modal-card" style="max-width: 420px; padding: 20px 16px 16px 16px;">
+            <!-- 🎨 公式 AMU tune 大迫力ロゴバナー ＆ バージョン -->
+            <div class="modal-banner-wrapper" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,107,0,0.2);">
+                <img src="assets/amu-tune-logo-banner.png" alt="AMU tune" class="modal-banner-img" style="height: 48px; max-width: 90%; object-fit: contain; filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.85));">
+                <span style="font-size: 0.68rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.4); padding: 2px 12px; border-radius: 12px; letter-spacing: 0.5px;">v1.7.0</span>
             </div>
 
-            <div class="modal-body" style="padding-top: 8px;">
-                <!-- Suno 楽曲URL / ID 直接入力エリア -->
-                <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(0,229,255,0.35); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-                    <label style="color: #00e5ff; font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 6px;">🔗 Suno 楽曲URL または 楽曲ID (UUID):</label>
-                    <div style="display: flex; gap: 6px;">
-                        <input type="text" id="suno-url-input" placeholder="https://suno.com/song/xxxxx" style="flex: 1; padding: 9px 12px; border-radius: 8px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.25); color: #fff; font-size: 0.85rem;">
-                        <button id="suno-url-load-btn" style="padding: 9px 14px; background: linear-gradient(135deg, #00e5ff, #0088ff); color: #fff; font-weight: bold; border: none; border-radius: 8px; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">読み込み</button>
-                    </div>
+            <div class="modal-body" style="padding-top: 4px;">
+                <!-- 📌 専用ブックマークレットボタン (Suno連携) -->
+                <div style="margin-bottom: 12px;">
+                    <button class="action-btn" id="copy-bookmarklet-btn" style="width: 100%; padding: 12px; font-size: 0.9rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 10px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 0 15px rgba(255,107,0,0.45); transition: transform 0.15s ease;">
+                        📌 専用ブックマークレットを取得
+                    </button>
+                    <textarea id="bookmarklet-code" readonly style="display: none;"></textarea>
                 </div>
 
                 <!-- 難易度設定 & スタートボタン -->
@@ -173,18 +172,20 @@
                         </div>
                     </div>
 
-                    <button class="start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 12px; font-size: 1.05rem; font-weight: 900; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 10px; color: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(255,107,0,0.5);">
+                    <button class="start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 13px; font-size: 1.08rem; font-weight: 900; background: linear-gradient(135deg, #00e5ff, #0088ff); border: none; border-radius: 10px; color: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(0,229,255,0.5);">
                         ▶ プレイスタート！
                     </button>
 
                     <!-- 🌐 WEBサイト埋め込みコードワンタップコピーボタン -->
-                    <button class="action-btn embed-btn" id="embed-code-copy-btn" style="width: 100%; margin-top: 8px; padding: 9px; font-size: 0.8rem; font-weight: bold; background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 8px; color: #00e5ff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <button class="action-btn embed-btn" id="embed-code-copy-btn" style="width: 100%; margin-top: 10px; padding: 9px; font-size: 0.8rem; font-weight: bold; background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 8px; color: #00e5ff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                         🔗 この曲をWEBサイトに埋め込む
                     </button>
 
-                    <div style="text-align: center; margin-top: 8px; font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-heading);">
+                    <div style="text-align: center; margin-top: 10px; font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-heading);">
+                        AMU TUNE RHYTHM ENGINE v1.7.0 (Build 2026.08)
                     </div>
-                </div>            </div>
+                </div>
+            </div>
         </div>
     </div>
 

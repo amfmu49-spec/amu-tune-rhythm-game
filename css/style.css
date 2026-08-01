@@ -1228,19 +1228,24 @@ body.is-embed .app-container {
 
 .modal-banner-wrapper {
     width: 100%;
-    padding: 10px 14px 4px 14px;
+    padding: 12px 14px 6px 14px;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.12), transparent);
-    border-bottom: 1px solid rgba(255, 107, 0, 0.15);
+    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.15), transparent);
+    border-bottom: 1px solid rgba(255, 107, 0, 0.18);
 }
 
 .modal-banner-img {
-    max-width: 80%;
-    height: 36px;
+    max-width: 90%;
+    height: 48px;
     object-fit: contain;
-    filter: drop-shadow(0 0 14px rgba(255, 140, 0, 0.75));
+    filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.85));
+    transition: transform 0.2s ease;
+}
+
+.modal-banner-img:hover {
+    transform: scale(1.03);
 }
 
 /* 🌌 レール背景ジャケット画像カバー (オシャレなダークサイバーオーバーレイ) */
