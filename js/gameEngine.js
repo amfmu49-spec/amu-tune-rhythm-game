@@ -435,12 +435,11 @@ class GameEngine {
 
             // 3. ホールド維持状態のチェック
             if (note.holding) {
-                // ユーザーが reqLane または隣接レーンを押しているかチェック (スライド移動中の保護)
-                const isPressed = this.activeKeys[reqLane] ||
-                                  this.activeKeys[Math.max(0, reqLane - 1)] ||
-                                  this.activeKeys[Math.min(this.lanesCount - 1, reqLane + 1)];
+                // 画面上に何らかのタッチ・キー入力が継続しているかチェック
+                // (スライドノーツは最初に当たった後、画面を押している限り確実に最後までスライド移動継続！)
+                const anyPressed = Object.values(this.activeKeys).some(Boolean);
 
-                if (isPressed) {
+                if (anyPressed) {
                     note.lastHoldTime = currentTime;
 
                     // 連続ティック加点 (0.08秒ごと)
@@ -458,8 +457,8 @@ class GameEngine {
                         if (this.onHpUpdate) this.onHpUpdate(this.hp);
                     }
                 } else {
-                    // 指が離れて 0.22 秒以上経過した場合 -> ホールド中断 (MISS)
-                    if (currentTime - note.lastHoldTime > 0.22) {
+                    // 指が完全に離れた場合のみ MISS 判定にする (猶予 0.35 秒)
+                    if (currentTime - note.lastHoldTime > 0.35) {
                         note.holding = false;
                         note.missed = true;
                         this.combo = 0;
@@ -830,7 +829,7 @@ class GameEngine {
         this.ctx.fillStyle = 'rgba(0, 229, 255, 0.45)';
         this.ctx.font = '700 9px Orbitron, sans-serif';
 
-        let systemStatus = "STATUS: AMU ENGINE v1.5.0";
+        let systemStatus = "STATUS: AMU ENGINE v1.6.0";
         const level = this.getComboLevel();
         if (level === 4) systemStatus = "STATUS: ULTIMATE GOD MODE ⚡";
         else if (level === 3) systemStatus = "STATUS: HYPER OVERDRIVE 🔥";
@@ -840,7 +839,7 @@ class GameEngine {
         // 画面左下の安全領域へ描画
         const hudBottomY = this.receptorY + 45;
         this.ctx.fillText(systemStatus, 12, hudBottomY);
-        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.5.0", 12, hudBottomY + 12);
+        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.6.0", 12, hudBottomY + 12);
 
         this.ctx.restore();
     }
