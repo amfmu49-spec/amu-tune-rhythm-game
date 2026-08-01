@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 100%確実なクリップボードコピー処理 (あらゆる環境・モバイル対応)
-    const copyTextToClipboard = (text) => {
+    const copyTextToClipboard = (text, promptMessage = '以下のコードをコピーしてください:') => {
         let success = false;
         try {
             const textArea = document.createElement('textarea');
@@ -137,13 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!success && navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).catch(() => {
-                prompt('以下の埋め込みHTMLコードをコピーしてください:', text);
+                prompt(promptMessage, text);
             });
             return true;
         }
 
         if (!success) {
-            prompt('以下の埋め込みHTMLコードをコピーしてください:', text);
+            prompt(promptMessage, text);
             return false;
         }
 
@@ -292,37 +292,23 @@ document.addEventListener('DOMContentLoaded', () => {
         gameEngine.play();
     });
 
-    // ブックマークレットコードコピーボタン
-    document.getElementById('copy-bookmarklet-btn')?.addEventListener('click', async () => {
+    // 📌 ブックマークレットコードコピーボタン (モバイル・PC 100%確実対応)
+    document.getElementById('copy-bookmarklet-btn')?.addEventListener('click', (e) => {
         const bCode = BookmarkletHelper.getBookmarkletCode();
-        let success = false;
-        try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(bCode);
-                success = true;
-            }
-        } catch(err) {
-            console.warn('Clipboard API failed, trying fallback.');
-        }
+        const btn = e.currentTarget;
+        const isCopied = copyTextToClipboard(bCode, '以下のブックマークレットJavaScriptコードを全選択してコピーしてください:');
 
-        if (!success) {
-            try {
-                const textArea = document.getElementById('bookmarklet-code');
-                if (textArea) {
-                    textArea.select();
-                    textArea.setSelectionRange(0, 99999);
-                    document.execCommand('copy');
-                    success = true;
-                }
-            } catch (err) {
-                console.error('Fallback copy failed', err);
+        if (isCopied) {
+            showToast('⚡ 専用ブックマークレットをコピーしました！ブラウザのブックマークに登録してお使いください。');
+            if (btn) {
+                const originalContent = btn.innerHTML;
+                btn.style.background = 'linear-gradient(135deg, #00e676, #00b0ff)';
+                btn.innerHTML = '<span>✔ コピー完了！(ブックマークに登録)</span><span style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">ブラウザのブックマークに貼り付けて保存</span>';
+                setTimeout(() => {
+                    btn.style.background = 'linear-gradient(135deg, var(--orange-primary), #ffaa00)';
+                    btn.innerHTML = originalContent;
+                }, 3000);
             }
-        }
-
-        if (success) {
-            alert('⚡ ブックマークレットをクリップボードにコピーしました！\nブラウザのブックマーク（お気に入り）に登録してお使いください。');
-        } else {
-            alert('コードの自動コピーに失敗しました。\nお手数ですが上のテキストエリアの文字を手動で全選択してコピーしてください。');
         }
     });
 

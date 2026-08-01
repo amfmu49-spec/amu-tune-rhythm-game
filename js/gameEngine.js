@@ -546,17 +546,6 @@ class GameEngine {
                     if (this.onScoreUpdate) this.onScoreUpdate(this.score);
                     if (this.onComboUpdate) this.onComboUpdate(this.combo);
                 }
-                    this.score += fullBonus;
-                    this.combo++;
-                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
-
-                    const popupText = note.type === 'slide' ? 'SLIDE COMPLETE!' : 'FULL HOLD!';
-                    this.addJudgmentPopup(popupText, note.endLane, fullBonus);
-                    this.createHitParticles(note.endLane, 'PERFECT');
-
-                    if (this.onScoreUpdate) this.onScoreUpdate(this.score);
-                    if (this.onComboUpdate) this.onComboUpdate(this.combo);
-                }
             }
         }
     }
