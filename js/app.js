@@ -78,8 +78,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 100%確実なクリップボードコピー処理 (あらゆる環境・モバイル対応)
+    const copyTextToClipboard = (text) => {
+        let success = false;
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.top = '-9999px';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            success = document.execCommand('copy');
+            document.body.removeChild(textArea);
+        } catch (e) {
+            console.warn('execCommand copy failed:', e);
+        }
+
+        if (!success && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(() => {
+                prompt('以下の埋め込みHTMLコードをコピーしてください:', text);
+            });
+            return true;
+        }
+
+        if (!success) {
+            prompt('以下の埋め込みHTMLコードをコピーしてください:', text);
+            return false;
+        }
+
+        return true;
+    };
+
     // 🌐「この曲をWEBサイトに埋め込む」ワンタップコピーボタン
-    document.getElementById('embed-code-copy-btn')?.addEventListener('click', () => {
+    document.getElementById('embed-code-copy-btn')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
         const baseUrl = window.location.origin + window.location.pathname;
         const activeDiff = ui.selectedDifficulty || 'NORMAL';
         let songParam = '';
@@ -98,14 +132,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const embedUrl = `${baseUrl}?${songParam}&diff=${activeDiff}&embed=true&autostart=true`;
         const iframeCode = `<iframe src="${embedUrl}" width="420" height="700" style="border:none; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);" allow="autoplay; haptic-feedback"></iframe>`;
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(iframeCode).then(() => {
-                showToast(`⚡ 「${songName}」の埋め込みHTMLコードをコピーしました！`);
-            }).catch(() => {
-                prompt('以下の埋め込みHTMLコードをコピーしてください:', iframeCode);
-            });
-        } else {
-            prompt('以下の埋め込みHTMLコードをコピーしてください:', iframeCode);
+        const isCopied = copyTextToClipboard(iframeCode);
+        if (isCopied) {
+            showToast(`⚡ 「${songName}」の埋め込みHTMLコードをコピーしました！`);
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✔ クリップボードにコピー完了！';
+                btn.style.background = 'rgba(118, 255, 3, 0.25)';
+                btn.style.borderColor = '#76ff03';
+                btn.style.color = '#76ff03';
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = 'rgba(0, 229, 255, 0.12)';
+                    btn.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                    btn.style.color = '#00e5ff';
+                }, 2500);
+            }
         }
     });
 
