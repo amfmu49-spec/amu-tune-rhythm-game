@@ -1308,17 +1308,17 @@ body.is-embed .app-container {
 .modal-banner-img {
     width: 100% !important;
     height: auto !important;
-    max-height: 125px !important; /* 96pxの約150%サイズ */
+    max-height: 96px !important; /* 100% 標準サイズ */
     transform: scale(1.0);
     display: block !important;
     border-radius: 8px;
-    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.85)) drop-shadow(0 0 25px rgba(0, 229, 255, 0.4));
+    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.85));
     transition: transform 0.2s ease;
     object-fit: contain;
 }
 
 .modal-banner-img:hover {
-    transform: scale(1.04);
+    transform: scale(1.02);
 }
 
 .bookmarklet-note {
