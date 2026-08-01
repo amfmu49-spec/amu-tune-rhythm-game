@@ -1224,6 +1224,27 @@ html, body {
         height: 110px; /* タップしやすく縦幅拡張 */
         padding-bottom: 14px;
     }
+
+    /* モバイル画面でのモーダルカード ＆ タイトルロゴ画像 100% 同期幅ルール */
+    .modal-card {
+        width: 95vw !important;
+        max-width: 420px !important;
+        padding: 16px !important;
+        box-sizing: border-box !important;
+    }
+    .modal-banner-wrapper {
+        width: 100% !important;
+        margin-bottom: 12px !important;
+        box-sizing: border-box !important;
+    }
+    .modal-banner-img {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        display: block !important;
+        object-fit: contain !important;
+    }
 }
 
 /* ==========================================================================
@@ -1294,26 +1315,28 @@ body.is-embed .app-container {
 }
 
 .modal-banner-wrapper {
-    width: 100%;
-    padding: 0;
-    margin: 0 0 12px 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 0 14px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
     background: transparent !important;
     border: none !important;
+    box-sizing: border-box !important;
 }
 
 .modal-banner-img {
     width: 100% !important;
-    height: auto !important;
     max-width: 100% !important;
-    max-height: none !important; /* 横幅を下のボタン端と一致する100%サイズに広げる */
+    height: auto !important;
+    max-height: none !important;
     display: block !important;
-    border-radius: 8px;
-    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.9));
-    transition: transform 0.2s ease;
+    border-radius: 10px !important;
+    filter: drop-shadow(0 0 20px rgba(255, 140, 0, 0.95)) !important;
+    transition: transform 0.2s ease !important;
+    object-fit: contain !important;
 }
 
 .modal-banner-img:hover {
