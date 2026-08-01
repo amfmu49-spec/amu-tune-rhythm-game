@@ -443,12 +443,38 @@ class GameEngine {
 
             // 3. ホールド維持状態のチェック
             if (note.holding) {
-                // 離しチェック: 対応キーが押されているか
-                const isKeyPressed = !!this.activeKeys[reqLane];
+                // 離しチェック: 対応キーが押されているか (スライド＆ホールドの広い判定＋猶予時間)
+                let isKeyPressed = false;
+
+                if (note.type === 'slide') {
+                    // SLIDE ノーツ: 現在地(reqLane)および始点〜終点周辺のキーが押されていればOK
+                    const minL = Math.min(reqLane, note.lane, note.endLane);
+                    const maxL = Math.max(reqLane, note.lane, note.endLane);
+                    for (let l = Math.max(0, minL - 1); l <= Math.min(this.lanesCount - 1, maxL + 1); l++) {
+                        if (this.activeKeys[l]) {
+                            isKeyPressed = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // HOLD ノーツ: 当該レーンまたは隣接レーンが押されていればOK
+                    isKeyPressed = !!this.activeKeys[reqLane] ||
+                                   (reqLane > 0 && !!this.activeKeys[reqLane - 1]) ||
+                                   (reqLane < this.lanesCount - 1 && !!this.activeKeys[reqLane + 1]);
+                }
+
+                // 指の滑走・キー押し替えの一瞬の隙間 (0.18秒間) は猶予バッファとして継続扱い！
+                if (isKeyPressed) {
+                    note.lastActiveHoldTime = currentTime;
+                } else {
+                    if (note.lastActiveHoldTime && (currentTime - note.lastActiveHoldTime <= 0.180)) {
+                        isKeyPressed = true;
+                    }
+                }
 
                 if (!isKeyPressed) {
-                    // 終点付近 (残り 0.12秒以内) で離した場合はホールド成功として扱う！
-                    if (currentTime >= note.time + note.duration - 0.120) {
+                    // 終点付近 (残り 0.14秒以内) で離した場合はホールド成功として扱う！
+                    if (currentTime >= note.time + note.duration - 0.140) {
                         note.completed = true;
                         note.hit = true;
                         note.holding = false;
@@ -465,7 +491,7 @@ class GameEngine {
                         if (this.onScoreUpdate) this.onScoreUpdate(this.score);
                         if (this.onComboUpdate) this.onComboUpdate(this.combo);
                     } else {
-                        // 途中で離してしまったため MISS !
+                        // 途中で完全に離してしまったため MISS !
                         note.holding = false;
                         note.missed = true;
                         this.combo = 0;
