@@ -411,18 +411,21 @@ html, body {
     border-left: 3px solid var(--orange-primary);
 }
 
-/* Top HUD Panels Container (横1列に並べるラッパー) */
+/* Top HUD Panels Container (横1列に並べるラッパー - 全画面サイズ対応) */
 .top-panels-wrapper {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    z-index: 10;
-    display: flex;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    z-index: 100;
+    display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     pointer-events: none;
+    width: calc(100% - 12px);
+    box-sizing: border-box;
 }
 
 .top-panels-wrapper .hud-panel {
@@ -433,40 +436,46 @@ html, body {
     pointer-events: auto;
     margin: 0 !important;
     box-sizing: border-box;
+    display: flex !important;
 }
 
 /* 1. Top Left Panel (プレイヤー情報) */
 .top-left-panel {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    flex-shrink: 0;
+    gap: 5px;
+    padding: 3px 6px !important;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .player-avatar {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     background: rgba(255,255,255,0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--orange-bright);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    flex-shrink: 0;
 }
 
 .player-name {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .player-rank-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.65rem;
+    gap: 4px;
+    font-size: 0.6rem;
     color: var(--text-muted);
 }
 
@@ -479,15 +488,16 @@ html, body {
 .top-center-panel {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex: 1;
-    max-width: 260px;
-    padding: 4px 10px;
-    background: rgba(10, 12, 18, 0.85) !important;
+    gap: 6px;
+    flex: 2;
+    min-width: 0;
+    padding: 3px 8px !important;
+    background: rgba(10, 12, 18, 0.88) !important;
     border: 1px solid rgba(0, 229, 255, 0.4) !important;
     border-left: 3px solid #00e5ff !important;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
+    border-radius: 6px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.75);
+    overflow: hidden;
 }
 
 /* 3. Top Right Score Panel (スコア & 難易度) */
@@ -496,14 +506,15 @@ html, body {
     flex-direction: column;
     align-items: flex-end;
     justify-content: center;
-    padding: 4px 10px;
+    padding: 3px 8px !important;
     flex-shrink: 0;
-    background: rgba(22, 24, 30, 0.85);
-    border-left: 3px solid #ffaa00;
+    background: rgba(22, 24, 30, 0.88) !important;
+    border-left: 3px solid #ffaa00 !important;
+    border-radius: 6px;
 }
 
 .top-right-score-panel .score-label {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
     color: #888;
     letter-spacing: 0.5px;
     line-height: 1;
@@ -511,20 +522,20 @@ html, body {
 
 .top-right-score-panel .score-val {
     font-family: var(--font-heading);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 900;
     color: var(--gold-accent);
     text-shadow: 0 0 8px rgba(255, 183, 0, 0.5);
-    line-height: 1.1;
+    line-height: 1;
 }
 
 .top-right-score-panel .diff-badge-active {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: bold;
     color: #00e5ff;
     background: rgba(0, 229, 255, 0.15);
-    padding: 1px 6px;
-    border-radius: 4px;
+    padding: 1px 4px;
+    border-radius: 3px;
     margin-top: 1px;
 }
 
@@ -1284,27 +1295,30 @@ body.is-embed .app-container {
 
 .modal-banner-wrapper {
     width: 100%;
-    padding: 0;
-    margin: 0;
+    padding: 10px 0;
+    margin: 0 0 10px 0;
     display: flex;
     justify-content: center;
     align-items: center;
     background: transparent !important;
     border: none !important;
+    overflow: visible !important;
 }
 
 .modal-banner-img {
     width: 100% !important;
     height: auto !important;
-    max-width: 100% !important;
+    max-height: 180px !important; /* 96pxの約200%巨大化 */
+    transform: scale(1.15); /* さらに115%拡大で大迫力200%オーバー */
     display: block !important;
     border-radius: 8px;
-    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.9));
+    filter: drop-shadow(0 0 25px rgba(255, 140, 0, 0.95)) drop-shadow(0 0 40px rgba(0, 229, 255, 0.6));
     transition: transform 0.2s ease;
+    object-fit: contain;
 }
 
 .modal-banner-img:hover {
-    transform: scale(1.02);
+    transform: scale(1.22);
 }
 
 .bookmarklet-note {

@@ -441,8 +441,45 @@ class GameEngine {
                 continue;
             }
 
-            // 3. ホールド維持状態のチェック (一度ホールド状態に入ったらノーツ完了まで絶対保護！)
+            // 3. ホールド維持状態のチェック
             if (note.holding) {
+                // 離しチェック: 対応キーが押されているか
+                const isKeyPressed = !!this.activeKeys[reqLane];
+
+                if (!isKeyPressed) {
+                    // 終点付近 (残り 0.12秒以内) で離した場合はホールド成功として扱う！
+                    if (currentTime >= note.time + note.duration - 0.120) {
+                        note.completed = true;
+                        note.hit = true;
+                        note.holding = false;
+
+                        const fullBonus = 1500 + Math.floor(this.combo * 15);
+                        this.score += fullBonus;
+                        this.combo++;
+                        if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+                        const popupText = note.type === 'slide' ? 'SLIDE COMPLETE!' : 'FULL HOLD!';
+                        this.addJudgmentPopup(popupText, note.endLane, fullBonus);
+                        this.createHitParticles(note.endLane, 'PERFECT');
+
+                        if (this.onScoreUpdate) this.onScoreUpdate(this.score);
+                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                    } else {
+                        // 途中で離してしまったため MISS !
+                        note.holding = false;
+                        note.missed = true;
+                        this.combo = 0;
+                        const hpLoss = { EASY: 1.5, NORMAL: 3.0, HARD: 6.0, EXPERT: 10.0 }[this.difficulty] || 5;
+                        this.hp = Math.max(0, this.hp - hpLoss);
+                        this.counts.miss++;
+                        this.addJudgmentPopup('MISS (RELEASED)', reqLane, 0);
+                        if (this.onJudgment) this.onJudgment('MISS');
+                        if (this.onComboUpdate) this.onComboUpdate(this.combo);
+                        if (this.onHpUpdate) this.onHpUpdate(this.hp);
+                    }
+                    continue;
+                }
+
                 note.lastHoldTime = currentTime;
 
                 // 連続ティック加点 (0.08秒ごと)
@@ -1202,6 +1239,45 @@ class GameEngine {
 
                     this.ctx.restore();
                 }
+            }
+
+            // ------------------------------------------------------------------
+            // 4. ホールド中リアルタイム進行リング ＆ 残り指示 ("HOLDING... 0.3s") 描画
+            // ------------------------------------------------------------------
+            if (note.holding && (note.type === 'hold' || note.type === 'slide')) {
+                const remainSec = Math.max(0, (note.time + note.duration) - currentTime);
+                const holdProgress = Math.min(1, Math.max(0, (currentTime - note.time) / (note.duration || 1)));
+
+                let currentReqLane = note.lane;
+                if (note.type === 'slide' && note.duration > 0) {
+                    currentReqLane = Math.round(note.lane + (note.endLane - note.lane) * holdProgress);
+                }
+                const bHold = this.getLaneBounds(currentReqLane);
+                const hx = bHold.x + bHold.width / 2;
+                const hy = this.receptorY;
+
+                this.ctx.save();
+
+                // 円形プログレスメーター
+                this.ctx.beginPath();
+                this.ctx.arc(hx, hy, 22, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * holdProgress, false);
+                this.ctx.strokeStyle = note.type === 'slide' ? '#00e5ff' : '#ffea00';
+                this.ctx.lineWidth = 5;
+                this.ctx.shadowColor = note.type === 'slide' ? '#00ffff' : '#ffaa00';
+                this.ctx.shadowBlur = 15;
+                this.ctx.stroke();
+
+                // HOLDING 指示バッジ
+                const percentText = `${Math.floor(holdProgress * 100)}% (${remainSec.toFixed(1)}s)`;
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = '900 11px Orbitron, sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'bottom';
+                this.ctx.shadowColor = '#000000';
+                this.ctx.shadowBlur = 6;
+                this.ctx.fillText(`HOLD! ${percentText}`, hx, hy - 26);
+
+                this.ctx.restore();
             }
         }
     }
