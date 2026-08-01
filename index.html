@@ -58,6 +58,8 @@
 
         <!-- 2. メインゲームキャンバスエリア (3D / 2D ゲーム画面) -->
         <main class="game-viewport">
+            <!-- 🌌 背景ジャケット画像カバー (薄いサイバーオーバーレイ) -->
+            <div id="game-bg-cover" class="game-bg-cover"></div>
             <canvas id="game-canvas"></canvas>
 
             <!-- 3. 左上: リアルタイム称号 ＆ ランクカード -->
@@ -138,7 +140,6 @@
                 </div>
             </div>
         </main>
-
     </div>
 
     <!-- 楽曲読み込み / モード選択 モーダル -->
@@ -151,101 +152,61 @@
 
             <div class="modal-header">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>⚡ 楽曲データの取り込み・選択</h2>
-                    <span style="font-size: 0.72rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 2px 8px; border-radius: 10px;">v1.4.0</span>
+                    <h2>⚡ 楽曲取り込み ＆ スタート</h2>
+                    <span style="font-size: 0.72rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 2px 8px; border-radius: 10px;">v1.5.0</span>
                 </div>
-                <p>MP3音声とSRT字幕から自動ノーツを生成します</p>
+                <p>Sunoの楽曲URLやIDを貼り付けるだけで、自動でノーツを作成・プレイできます！</p>
             </div>
 
             <div class="modal-body">
-                <!-- モーダルタブ切り替え -->
-                <div class="modal-tabs">
-                    <button class="tab-btn active" data-tab="quick-tab">🚀 クイックスタート</button>
-                    <button class="tab-btn" data-tab="bookmarklet-tab">📌 専用ブックマークレット</button>
-                    <button class="tab-btn" data-tab="demo-tab">🎮 デモ曲で遊ぶ</button>
-                    <button class="tab-btn" data-tab="file-tab">📁 ファイルを選択</button>
-                </div>
-
-                <div class="modal-tab-contents">
-                    <!-- タブ1: 🚀 クイックスタート -->
-                    <div class="tab-content active" id="quick-tab">
-                        <p class="tab-desc">連携済み楽曲のスタート、またはSunoの楽曲URLを貼り付けて「読み込み」を押すだけで自動でノーツを生成できます！</p>
-                        
-                        <!-- Suno 楽曲URL / ID 直接入力エリア -->
-                        <div style="margin-top: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(0,229,255,0.35); border-radius: 8px; padding: 10px;">
-                            <label style="color: #00e5ff; font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">🔗 Suno 楽曲URL または 楽曲ID (UUID) を入力:</label>
-                            <div style="display: flex; gap: 6px;">
-                                <input type="text" id="suno-url-input" placeholder="https://suno.com/song/xxxxx または 楽曲ID" style="flex: 1; padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.8rem;">
-                                <button id="suno-url-load-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #00e5ff, #0088ff); color: #fff; font-weight: bold; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">読み込み</button>
-                            </div>
+                <!-- モーダルメインコンテンツ -->
+                <div class="modal-main-container">
+                    <!-- Suno 楽曲URL / ID 直接入力エリア -->
+                    <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(0,229,255,0.4); border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 0 15px rgba(0,229,255,0.15);">
+                        <label style="color: #00e5ff; font-size: 0.85rem; font-weight: bold; display: block; margin-bottom: 6px;">🔗 Suno 楽曲URL または 楽曲ID (UUID) を入力:</label>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="text" id="suno-url-input" placeholder="https://suno.com/song/xxxxx または 楽曲ID" style="flex: 1; padding: 9px 12px; border-radius: 8px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.25); color: #fff; font-size: 0.85rem;">
+                            <button id="suno-url-load-btn" style="padding: 9px 16px; background: linear-gradient(135deg, #00e5ff, #0088ff); color: #fff; font-weight: bold; border: none; border-radius: 8px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; box-shadow: 0 0 10px rgba(0,229,255,0.4);">読み込み</button>
                         </div>
                     </div>
 
-                    <!-- タブ2: 🎮 デモ曲で遊ぶ -->
-                    <div class="tab-content" id="demo-tab">
-                        <p class="tab-desc">用意された合成音源ビート＆SRTデモ楽曲ですぐに遊べます。</p>
-                        <div class="demo-song-list">
-                            <div class="demo-song-card selected" data-demo="suno_sunrise" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,107,0,0.15); border: 1px solid var(--orange-primary); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <div class="demo-cover" style="font-size: 1.8rem;">🌅</div>
-                                <div class="demo-info">
-                                    <div class="demo-title" style="font-weight: bold; color: #fff;">Suno Sunrise (Cyber Beat)</div>
-                                    <div class="demo-meta" style="font-size: 0.8rem; color: var(--text-muted);">128 BPM • Synth Wave • Auto Chart</div>
+                    <!-- クリップボードワンタップ取り込み ＆ ブックマークレット -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <button class="action-btn" id="clipboard-import-btn" style="padding: 10px; font-size: 0.8rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 8px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 0 10px rgba(255,107,0,0.4);">
+                            📋 コピーデータから取り込み
+                        </button>
+                        <button class="action-btn secondary" id="copy-bookmarklet-btn" style="padding: 10px; font-size: 0.8rem; font-weight: bold; background: rgba(20,20,30,0.8); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            📌 ブックマークレット取得
+                        </button>
+                    </div>
+                    <textarea id="bookmarklet-code" readonly style="display: none;"></textarea>
+
+                    <!-- デモ楽曲クイック選択 -->
+                    <div class="demo-songs-compact" style="background: rgba(10,12,18,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold; margin-bottom: 6px;">🎮 またはデモ楽曲を試す:</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="demo-song-card selected" data-demo="suno_sunrise" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(255,107,0,0.2); border: 1px solid var(--orange-primary); border-radius: 8px; cursor: pointer;">
+                                <div style="font-size: 1.3rem;">🌅</div>
+                                <div style="overflow: hidden;">
+                                    <div class="demo-title" style="font-weight: bold; color: #fff; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Suno Sunrise</div>
+                                    <div class="demo-meta" style="font-size: 0.65rem; color: var(--text-muted);">Synth Wave • 128BPM</div>
                                 </div>
                             </div>
-                            <div class="demo-song-card" data-demo="neon_drive" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(20,20,30,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer;">
-                                <div class="demo-cover" style="font-size: 1.8rem;">🏙️</div>
-                                <div class="demo-info">
-                                    <div class="demo-title" style="font-weight: bold; color: #fff;">Neon Drive (Speed Vocal)</div>
-                                    <div class="demo-meta" style="font-size: 0.8rem; color: var(--text-muted);">145 BPM • Cyber Bass • Auto Chart</div>
+                            <div class="demo-song-card" data-demo="neon_drive" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(20,20,30,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; cursor: pointer;">
+                                <div style="font-size: 1.3rem;">🏙️</div>
+                                <div style="overflow: hidden;">
+                                    <div class="demo-title" style="font-weight: bold; color: #fff; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Neon Drive</div>
+                                    <div class="demo-meta" style="font-size: 0.65rem; color: var(--text-muted);">Cyber Bass • 145BPM</div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- タブ3: 📁 ファイルを選択 -->
-                    <div class="tab-content" id="file-tab">
-                        <p class="tab-desc">お持ちの <strong>.mp3 / .wav 音声ファイル</strong> と <strong>.srt 字幕ファイル</strong> を選択、またはドラッグ＆ドロップしてください。</p>
-
-                        <div class="drop-zone" id="drop-zone">
-                            <div class="drop-zone-icon">📁</div>
-                            <div class="drop-zone-text">MP3音源 & SRT字幕をドラッグ＆ドロップ</div>
-                            <div class="drop-zone-sub">または下のボタンから選択</div>
-                            
-                            <div class="file-inputs">
-                                <label class="file-btn">
-                                    🎵 MP3音声を選択
-                                    <input type="file" id="mp3-input" accept="audio/*">
-                                </label>
-                                <label class="file-btn secondary">
-                                    📝 SRT字幕を選択 (任意)
-                                    <input type="file" id="srt-input" accept=".srt,.txt">
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="file-status" id="file-status-display">
-                            <div id="mp3-status">MP3: 未選択</div>
-                            <div id="srt-status">SRT: 未選択 (※未選択時は音響ビート解析のみで生成)</div>
-                        </div>
-                    </div>
-
-                    <!-- タブ4: 📌 専用ブックマークレット -->
-                    <div class="tab-content" id="bookmarklet-tab">
-                        <p class="tab-desc">Sunoの再生ページで実行すると、再生中の楽曲を全自動で取得し、<strong>直接 AMU TUNE へ画面移動してノーツを作成・スタート</strong>します！</p>
-
-                        <div class="bookmarklet-box">
-                            <div class="code-wrapper">
-                                <textarea id="bookmarklet-code" readonly style="width: 100%; height: 70px; background: rgba(0,0,0,0.5); color: #00e5ff; border: 1px solid var(--orange-primary); border-radius: 6px; font-family: monospace; font-size: 0.75rem; padding: 8px;"></textarea>
-                            </div>
-                            <button class="action-btn copy-btn" id="copy-bookmarklet-btn" style="width: 100%; margin-top: 8px;">⚡ 専用ブックマークレットをコピー</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- 共通フッター: 難易度設定 & スタートボタン (全タブで常に表示) -->
-                <div class="modal-controls" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <!-- 共通フッター: 難易度設定 & スタートボタン -->
+                <div class="modal-controls" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
                     <div class="diff-selector">
-                        <label style="color: var(--text-muted); font-size: 0.85rem;">難易度:</label>
+                        <label style="color: var(--text-muted); font-size: 0.8rem;">難易度:</label>
                         <div class="diff-btn-group" style="display: flex; gap: 6px; margin-top: 4px;">
                             <button class="diff-btn" data-diff="EASY">EASY</button>
                             <button class="diff-btn active" data-diff="NORMAL">NORMAL</button>
@@ -254,12 +215,12 @@
                         </div>
                     </div>
 
-                    <button class="action-btn start-btn" id="start-game-btn" style="width: 100%; margin-top: 12px; padding: 14px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, var(--orange-primary), var(--gold-accent)); border: none; border-radius: 8px; color: #fff; cursor: pointer; box-shadow: 0 0 15px rgba(255,107,0,0.4);">
-                        ⚡ ノーツを自動作成してプレイ！
+                    <button class="start-btn" id="start-game-btn" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 1.05rem; font-weight: 900; background: linear-gradient(135deg, var(--orange-primary), #ffaa00); border: none; border-radius: 10px; color: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(255,107,0,0.5);">
+                        ▶ プレイスタート！
                     </button>
 
                     <!-- 🌐 WEBサイト埋め込みコードワンタップコピーボタン -->
-                    <button class="action-btn embed-btn" id="embed-code-copy-btn" style="width: 100%; margin-top: 8px; padding: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 8px; color: #00e5ff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                    <button class="action-btn embed-btn" id="embed-code-copy-btn" style="width: 100%; margin-top: 8px; padding: 10px; font-size: 0.82rem; font-weight: bold; background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 8px; color: #00e5ff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
                         🔗 この曲をWEBサイトに埋め込む
                     </button>
 

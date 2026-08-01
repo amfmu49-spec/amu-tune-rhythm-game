@@ -33,15 +33,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // カバーアート表示の更新ヘルパー
+    // カバーアート表示の更新ヘルパー (右上カード ＆ レール背面背景に自動適用)
     const setSongCoverArt = (coverUrl) => {
         const display = document.getElementById('song-cover-display');
-        const songCard = document.getElementById('song-card-panel');
         if (display && coverUrl) {
             display.style.backgroundImage = `url(${coverUrl})`;
             display.style.backgroundSize = 'cover';
             display.style.backgroundPosition = 'center';
             display.textContent = '';
+        }
+
+        const bgCover = document.getElementById('game-bg-cover');
+        if (bgCover && coverUrl) {
+            bgCover.style.backgroundImage = `url(${coverUrl})`;
         }
     };
 
@@ -407,6 +411,35 @@ document.addEventListener('DOMContentLoaded', () => {
             startBtn.disabled = true;
         }
         ui.showLoadModal();
+
+        // Suno 標準カバー画像 ＆ 曲名メタデータの自動抽出・更新
+        try {
+            const cdnCoverUrl = `https://cdn1.suno.ai/image_${uuid}.png`;
+            setSongCoverArt(cdnCoverUrl);
+
+            // API から曲名・アーティスト情報を自動取得
+            const metaApiUrl = `https://api.suno.ai/api/external/fetch/?ids=${uuid}`;
+            fetchWithProxy(metaApiUrl).then(metaBuffer => {
+                const metaText = new TextDecoder().decode(metaBuffer);
+                const metaJson = JSON.parse(metaText);
+                if (Array.isArray(metaJson) && metaJson.length > 0) {
+                    const song = metaJson[0];
+                    if (song.title) {
+                        const titleDisp = document.getElementById('song-title-display');
+                        if (titleDisp) titleDisp.textContent = song.title;
+                    }
+                    if (song.display_name || song.handle) {
+                        const artistDisp = document.getElementById('song-artist-display');
+                        if (artistDisp) artistDisp.textContent = song.display_name || `@${song.handle}`;
+                    }
+                    if (song.image_url) {
+                        setSongCoverArt(song.image_url);
+                    }
+                }
+            }).catch(e => console.warn('Metadata fetch fallback:', e));
+        } catch (e) {
+            console.warn('Cover set fallback:', e);
+        }
 
         // 進捗アニメ（実際のサイズが不明なので推定アニメ）
         let fakePct = 0;

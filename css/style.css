@@ -1211,34 +1211,50 @@ body.is-embed .app-container {
 }
 
 /* ==========================================================================
-   AMU tune Official Logo Banner Styles (Compact & Balanced)
+   AMU tune Official Logo Banner Styles & Cover Background
    ========================================================================== */
 .header-logo-img {
-    height: 22px;
+    height: 24px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.7));
+    filter: drop-shadow(0 0 10px rgba(255, 107, 0, 0.75));
     transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .header-logo-img:hover {
-    transform: scale(1.04);
-    filter: drop-shadow(0 0 10px rgba(255, 140, 0, 0.9));
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 14px rgba(255, 140, 0, 0.95));
 }
 
 .modal-banner-wrapper {
     width: 100%;
-    padding: 8px 12px 2px 12px;
+    padding: 10px 14px 4px 14px;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.1), transparent);
-    border-bottom: 1px solid rgba(255, 107, 0, 0.12);
+    background: linear-gradient(to bottom, rgba(255, 107, 0, 0.12), transparent);
+    border-bottom: 1px solid rgba(255, 107, 0, 0.15);
 }
 
 .modal-banner-img {
-    max-width: 70%;
-    height: 32px;
+    max-width: 80%;
+    height: 36px;
     object-fit: contain;
-    filter: drop-shadow(0 0 12px rgba(255, 140, 0, 0.6));
+    filter: drop-shadow(0 0 14px rgba(255, 140, 0, 0.75));
+}
+
+/* 🌌 レール背景ジャケット画像カバー (オシャレなダークサイバーオーバーレイ) */
+.game-bg-cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.18;
+    filter: blur(4px) brightness(0.65);
+    pointer-events: none;
+    z-index: 1;
+    transition: background-image 0.5s ease;
 }
