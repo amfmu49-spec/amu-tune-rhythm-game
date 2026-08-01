@@ -411,31 +411,55 @@ html, body {
     border-left: 3px solid var(--orange-primary);
 }
 
-/* 1. Top Left Panel */
+/* Top HUD Panels Container (横1列に並べるラッパー) */
+.top-panels-wrapper {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.top-panels-wrapper .hud-panel {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    pointer-events: auto;
+    margin: 0 !important;
+    box-sizing: border-box;
+}
+
+/* 1. Top Left Panel (プレイヤー情報) */
 .top-left-panel {
-    top: 10px;
-    left: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
+    gap: 6px;
+    padding: 4px 8px;
+    flex-shrink: 0;
 }
 
 .player-avatar {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     background: rgba(255,255,255,0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--orange-bright);
+    font-size: 0.8rem;
 }
 
 .player-name {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 .player-rank-row {
@@ -451,21 +475,57 @@ html, body {
     font-weight: bold;
 }
 
-/* 2. Top Right Panel (TRACK INFO 小窓) */
-.top-right-panel {
-    top: 10px;
-    right: 10px;
+/* 2. Top Center Panel (楽曲情報) */
+.top-center-panel {
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: 160px;
-    max-width: 220px;
-    padding: 6px 10px;
+    flex: 1;
+    max-width: 260px;
+    padding: 4px 10px;
     background: rgba(10, 12, 18, 0.85) !important;
     border: 1px solid rgba(0, 229, 255, 0.4) !important;
     border-left: 3px solid #00e5ff !important;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
+}
+
+/* 3. Top Right Score Panel (スコア & 難易度) */
+.top-right-score-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 4px 10px;
+    flex-shrink: 0;
+    background: rgba(22, 24, 30, 0.85);
+    border-left: 3px solid #ffaa00;
+}
+
+.top-right-score-panel .score-label {
+    font-size: 0.55rem;
+    color: #888;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.top-right-score-panel .score-val {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--gold-accent);
+    text-shadow: 0 0 8px rgba(255, 183, 0, 0.5);
+    line-height: 1.1;
+}
+
+.top-right-score-panel .diff-badge-active {
+    font-size: 0.6rem;
+    font-weight: bold;
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.15);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 1px;
 }
 
 .song-cover {

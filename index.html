@@ -65,41 +65,44 @@
             <div id="game-bg-cover" class="game-bg-cover"></div>
             <canvas id="game-canvas"></canvas>
 
-            <!-- 3. 左上: リアルタイム称号 ＆ ランクカード -->
-            <div class="hud-panel top-left-panel">
-                <div class="player-avatar">🎧</div>
-                <div class="player-details">
-                    <div class="player-name" id="player-title-display" style="color: #a0a0a0; font-weight: 900; font-size: 0.85rem;">🔰 NOVICE BEATER</div>
-                    <div class="player-meta">
-                        <span class="rank-badge" id="player-rank-badge" style="color: #a0a0a0; font-weight: bold;">RANK C</span>
+            <!-- 3. 上部HUDパネル (横1列配置) -->
+            <div class="top-panels-wrapper">
+                <!-- ① 左: プレイヤー称号 ＆ ランクカード -->
+                <div class="hud-panel top-left-panel">
+                    <div class="player-avatar">🎧</div>
+                    <div class="player-details">
+                        <div class="player-name" id="player-title-display" style="color: #a0a0a0; font-weight: 900; font-size: 0.85rem;">🔰 NOVICE BEATER</div>
+                        <div class="player-meta">
+                            <span class="rank-badge" id="player-rank-badge" style="color: #a0a0a0; font-weight: bold;">RANK C</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 4. 右上: 楽曲・再生状況カード -->
-            <div class="hud-panel top-right-panel" id="song-card-panel">
-                <div class="song-cover-box" id="song-cover-display">🎵</div>
-                <div class="song-info-group">
-                    <div class="song-title-scroll">
-                        <div class="song-title" id="song-title-display">Suno Sunrise</div>
+                <!-- ② 中央: 楽曲・再生状況カード -->
+                <div class="hud-panel top-center-panel" id="song-card-panel">
+                    <div class="song-cover-box" id="song-cover-display">🎵</div>
+                    <div class="song-info-group">
+                        <div class="song-title-scroll">
+                            <div class="song-title" id="song-title-display">Suno Sunrise</div>
+                        </div>
+                        <div class="song-artist" id="song-artist-display">AI Music Experience</div>
+                        <div class="song-metrics">
+                            <span class="metric-bpm">BPM <span id="bpm-display">128</span></span>
+                            <span class="metric-time"><span id="current-time-display">0:02</span> / <span id="total-time-display">0:45</span></span>
+                        </div>
                     </div>
-                    <div class="song-artist" id="song-artist-display">AI Music Experience</div>
-                    <div class="song-metrics">
-                        <span class="metric-bpm">BPM <span id="bpm-display">128</span></span>
-                        <span class="metric-time"><span id="current-time-display">0:02</span> / <span id="total-time-display">0:45</span></span>
+                    <!-- 楽曲プログレスバー -->
+                    <div class="song-progress-track">
+                        <div class="song-progress-fill" id="song-progress-fill"></div>
                     </div>
                 </div>
-                <!-- 楽曲プログレスバー -->
-                <div class="song-progress-track">
-                    <div class="song-progress-fill" id="song-progress-fill"></div>
-                </div>
-            </div>
 
-            <!-- 5. 中央オーバーレイ (スコア / コンボ / 判定ポップアップ) -->
-            <div class="hud-panel middle-right-panel">
-                <div class="score-label">SCORE</div>
-                <div class="score-val" id="score-display">000000</div>
-                <div class="diff-badge-active" id="diff-badge-display">NORMAL</div>
+                <!-- ③ 右: スコア ＆ 難易度カード -->
+                <div class="hud-panel top-right-score-panel">
+                    <div class="score-label">SCORE</div>
+                    <div class="score-val" id="score-display">000000</div>
+                    <div class="diff-badge-active" id="diff-badge-display">NORMAL</div>
+                </div>
             </div>
 
             <div class="combo-container" id="combo-container">
