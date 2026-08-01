@@ -48,13 +48,9 @@
             </div>
             <div class="header-center" style="display: flex; flex-direction: column; align-items: center;">
                 <img src="assets/amu-tune-logo-banner.png" alt="AMU tune" class="header-logo-img">
-                <span class="app-version-tag" style="font-size: 0.60rem; color: #00e5ff; font-weight: 700; font-family: var(--font-heading); letter-spacing: 0.5px; margin-top: 1px;">v1.9.1</span>
+                <span class="app-version-tag" style="font-size: 0.60rem; color: #00e5ff; font-weight: 700; font-family: var(--font-heading); letter-spacing: 0.5px; margin-top: 1px;">v1.9.2</span>
             </div>
             <div class="header-right">
-                <div class="user-currency">
-                    <span class="gem-icon">💎</span>
-                    <span class="gem-count">3,450</span>
-                </div>
                 <button class="settings-btn" id="settings-toggle-btn">🔔</button>
             </div>
         </header>
@@ -65,20 +61,9 @@
             <div id="game-bg-cover" class="game-bg-cover"></div>
             <canvas id="game-canvas"></canvas>
 
-            <!-- 3. 上部HUDパネル (横1列配置) -->
+            <!-- 3. 上部HUDパネル (曲名 ＆ スコアの2つのみ・横1列配置) -->
             <div class="top-panels-wrapper">
-                <!-- ① 左: プレイヤー称号 ＆ ランクカード -->
-                <div class="hud-panel top-left-panel">
-                    <div class="player-avatar">🎧</div>
-                    <div class="player-details">
-                        <div class="player-name" id="player-title-display" style="color: #a0a0a0; font-weight: 900; font-size: 0.85rem;">🔰 NOVICE BEATER</div>
-                        <div class="player-meta">
-                            <span class="rank-badge" id="player-rank-badge" style="color: #a0a0a0; font-weight: bold;">RANK C</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ② 中央: 楽曲・再生状況カード -->
+                <!-- ① 左: 楽曲・再生状況カード -->
                 <div class="hud-panel top-center-panel" id="song-card-panel">
                     <div class="song-cover-box" id="song-cover-display">🎵</div>
                     <div class="song-info-group">
@@ -97,7 +82,7 @@
                     </div>
                 </div>
 
-                <!-- ③ 右: スコア ＆ 難易度カード -->
+                <!-- ② 右: スコア ＆ 難易度カード -->
                 <div class="hud-panel top-right-score-panel">
                     <div class="score-label">SCORE</div>
                     <div class="score-val" id="score-display">000000</div>
@@ -154,7 +139,7 @@
             <!-- 🎨 公式 AMU tune 大迫力ロゴバナー ＆ バージョン -->
             <div class="modal-banner-wrapper" style="display: flex; flex-direction: column; align-items: center;">
                 <img src="assets/amu-tune-logo-banner.png" alt="AMU tune" class="modal-banner-img">
-                <span style="font-size: 0.68rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.4); padding: 2px 12px; border-radius: 12px; letter-spacing: 0.5px;">v1.9.1</span>
+                <span style="font-size: 0.68rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.4); padding: 2px 12px; border-radius: 12px; letter-spacing: 0.5px;">v1.9.2</span>
             </div>
 
             <div class="modal-body">
@@ -189,7 +174,7 @@
                     </button>
 
                     <div style="text-align: center; margin-top: 10px; font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-heading);">
-                        AMU TUNE RHYTHM ENGINE v1.9.1 (Build 2026.08)
+                        AMU TUNE RHYTHM ENGINE v1.9.2 (Build 2026.08)
                     </div>
                 </div>
             </div>

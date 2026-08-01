@@ -484,14 +484,14 @@ html, body {
     font-weight: bold;
 }
 
-/* 2. Top Center Panel (楽曲情報) */
+/* 1. Top Left/Center Panel (楽曲情報) */
 .top-center-panel {
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex: 2;
+    gap: 8px;
+    flex: 1;
     min-width: 0;
-    padding: 3px 8px !important;
+    padding: 4px 10px !important;
     background: rgba(10, 12, 18, 0.88) !important;
     border: 1px solid rgba(0, 229, 255, 0.4) !important;
     border-left: 3px solid #00e5ff !important;
@@ -500,13 +500,13 @@ html, body {
     overflow: hidden;
 }
 
-/* 3. Top Right Score Panel (スコア & 難易度) */
+/* 2. Top Right Score Panel (スコア & 難易度) */
 .top-right-score-panel {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: center;
-    padding: 3px 8px !important;
+    padding: 4px 10px !important;
     flex-shrink: 0;
     background: rgba(22, 24, 30, 0.88) !important;
     border-left: 3px solid #ffaa00 !important;
@@ -1308,17 +1308,17 @@ body.is-embed .app-container {
 .modal-banner-img {
     width: 100% !important;
     height: auto !important;
-    max-height: 180px !important; /* 96pxの約200%巨大化 */
-    transform: scale(1.15); /* さらに115%拡大で大迫力200%オーバー */
+    max-height: 145px !important; /* 96pxの約175%サイズ */
+    transform: scale(1.04);
     display: block !important;
     border-radius: 8px;
-    filter: drop-shadow(0 0 25px rgba(255, 140, 0, 0.95)) drop-shadow(0 0 40px rgba(0, 229, 255, 0.6));
+    filter: drop-shadow(0 0 20px rgba(255, 140, 0, 0.9)) drop-shadow(0 0 30px rgba(0, 229, 255, 0.5));
     transition: transform 0.2s ease;
     object-fit: contain;
 }
 
 .modal-banner-img:hover {
-    transform: scale(1.22);
+    transform: scale(1.08);
 }
 
 .bookmarklet-note {
