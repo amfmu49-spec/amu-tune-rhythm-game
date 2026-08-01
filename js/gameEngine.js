@@ -435,9 +435,10 @@ class GameEngine {
 
             // 3. ホールド維持状態のチェック
             if (note.holding) {
-                // ユーザーが reqLane (またはスライド移動中の隣接レーン) を押しているかチェック
+                // ユーザーが reqLane または隣接レーンを押しているかチェック (スライド移動中の保護)
                 const isPressed = this.activeKeys[reqLane] ||
-                                  (note.type === 'slide' && (this.activeKeys[Math.max(0, reqLane - 1)] || this.activeKeys[Math.min(this.lanesCount - 1, reqLane + 1)]));
+                                  this.activeKeys[Math.max(0, reqLane - 1)] ||
+                                  this.activeKeys[Math.min(this.lanesCount - 1, reqLane + 1)];
 
                 if (isPressed) {
                     note.lastHoldTime = currentTime;
@@ -457,8 +458,8 @@ class GameEngine {
                         if (this.onHpUpdate) this.onHpUpdate(this.hp);
                     }
                 } else {
-                    // 指が離れて 0.12 秒以上経過した場合 -> ホールド中断 (MISS)
-                    if (currentTime - note.lastHoldTime > 0.12) {
+                    // 指が離れて 0.22 秒以上経過した場合 -> ホールド中断 (MISS)
+                    if (currentTime - note.lastHoldTime > 0.22) {
                         note.holding = false;
                         note.missed = true;
                         this.combo = 0;
@@ -530,11 +531,11 @@ class GameEngine {
     }
 
     getComboLevel() {
-        if (this.combo >= 200) return 4; // ULTIMATE GOD MODE
-        if (this.combo >= 100) return 3; // HYPER OVERDRIVE
-        if (this.combo >= 50) return 2;  // SUPER FEVER
-        if (this.combo >= 20) return 1;  // FEVER
-        return 0;                         // NORMAL
+        if (this.combo >= 50) return 4; // ULTIMATE MAX GOD MODE (50コンボで最高潮MAX!)
+        if (this.combo >= 35) return 3; // HYPER OVERDRIVE
+        if (this.combo >= 20) return 2; // SUPER FEVER
+        if (this.combo >= 10) return 1; // FEVER
+        return 0;                       // NORMAL
     }
 
     triggerScreenShake() {
@@ -829,7 +830,7 @@ class GameEngine {
         this.ctx.fillStyle = 'rgba(0, 229, 255, 0.45)';
         this.ctx.font = '700 9px Orbitron, sans-serif';
 
-        let systemStatus = "STATUS: AMU ENGINE v1.3.1";
+        let systemStatus = "STATUS: AMU ENGINE v1.4.0";
         const level = this.getComboLevel();
         if (level === 4) systemStatus = "STATUS: ULTIMATE GOD MODE ⚡";
         else if (level === 3) systemStatus = "STATUS: HYPER OVERDRIVE 🔥";
@@ -839,7 +840,7 @@ class GameEngine {
         // 画面左下の安全領域へ描画
         const hudBottomY = this.receptorY + 45;
         this.ctx.fillText(systemStatus, 12, hudBottomY);
-        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.3.1", 12, hudBottomY + 12);
+        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.4.0", 12, hudBottomY + 12);
 
         this.ctx.restore();
     }
@@ -1035,9 +1036,12 @@ class GameEngine {
             // ホールド中の場合、頭は判定線に固定
             const yHead = note.holding ? this.receptorY : yHeadRaw;
 
-            // 画面外チェック
-            if (yHead < this.spawnY - 50 || yTail > this.receptorY + 80) {
+            // 画面外チェック (ノーツが完全に画面を通過するまで消さないように保護)
+            if (yTail < this.spawnY - 100 || yHead > this.receptorY + 120) {
                 if (note.type === 'tap' && (tHead - currentTime > this.scrollSpeed || tHead - currentTime < -0.2)) {
+                    continue;
+                }
+                if ((note.type === 'hold' || note.type === 'slide') && tTail < currentTime - 0.2) {
                     continue;
                 }
             }
@@ -1046,84 +1050,78 @@ class GameEngine {
             // 1. HOLD / SLIDE ノーツのネオンロング帯 (Body) の描画
             // ------------------------------------------------------------------
             if ((note.type === 'hold' || note.type === 'slide') && note.duration > 0) {
-                if (yHead >= this.spawnY - 50 && yTail <= this.receptorY + 80) {
-                    this.ctx.save();
+                this.ctx.save();
 
-                    const steps = 14; // スライド曲線を滑らかに補間する分割数
-                    const points = [];
+                const steps = 14; // スライド曲線を滑らかに補間する分割数
+                const points = [];
 
-                    for (let s = 0; s <= steps; s++) {
-                        const stepRatio = s / steps;
-                        // tHead (下) 〜 tTail (上)
-                        const tCurr = tHead + (tTail - tHead) * stepRatio;
-                        let yCurr = getYFromTime(tCurr);
+                for (let s = 0; s <= steps; s++) {
+                    const stepRatio = s / steps;
+                    // tHead (下) 〜 tTail (上)
+                    const tCurr = tHead + (tTail - tHead) * stepRatio;
+                    let yCurr = getYFromTime(tCurr);
 
-                        if (note.holding && tCurr < currentTime) {
-                            yCurr = this.receptorY;
-                        }
-
-                        const bCurr = getBoundsAtTime(note, tCurr);
-                        const margin = 10;
-                        points.push({
-                            xLeft: bCurr.x + margin,
-                            xRight: bCurr.x + bCurr.width - margin,
-                            y: yCurr
-                        });
+                    if (note.holding && tCurr < currentTime) {
+                        yCurr = this.receptorY;
                     }
 
-                    // 帯ポリゴンのパス生成
-                    this.ctx.beginPath();
-                    // 左側を下から上へ
-                    this.ctx.moveTo(points[0].xLeft, points[0].y);
-                    for (let s = 1; s <= steps; s++) {
-                        this.ctx.lineTo(points[s].xLeft, points[s].y);
-                    }
-                    // 右側を上から下へ
-                    for (let s = steps; s >= 0; s--) {
-                        this.ctx.lineTo(points[s].xRight, points[s].y);
-                    }
-                    this.ctx.closePath();
-
-                    // ネオングラデーション
-                    const grad = this.ctx.createLinearGradient(0, yTail, 0, yHead);
-                    if (note.type === 'slide') {
-                        grad.addColorStop(0, 'rgba(0, 229, 255, 0.7)');
-                        grad.addColorStop(0.5, 'rgba(255, 0, 229, 0.8)');
-                        grad.addColorStop(1, 'rgba(0, 229, 255, 0.9)');
-                    } else {
-                        grad.addColorStop(0, 'rgba(255, 170, 0, 0.6)');
-                        grad.addColorStop(0.5, 'rgba(118, 255, 3, 0.75)');
-                        grad.addColorStop(1, 'rgba(255, 170, 0, 0.85)');
-                    }
-
-                    this.ctx.fillStyle = grad;
-                    this.ctx.shadowColor = (note.type === 'slide') ? '#ff00e5' : '#ffaa00';
-                    this.ctx.shadowBlur = note.holding ? 22 : 12;
-                    this.ctx.fill();
-
-                    // ホールド中に帯の中に走るサイバーネオンパルス光線
-                    if (note.holding) {
-                        this.ctx.strokeStyle = '#ffffff';
-                        this.ctx.lineWidth = 3;
-                        this.ctx.shadowColor = '#ffffff';
-                        this.ctx.shadowBlur = 15;
-                        this.ctx.beginPath();
-                        const midPoints = points.map(p => ({ x: (p.xLeft + p.xRight) / 2, y: p.y }));
-                        this.ctx.moveTo(midPoints[0].x, midPoints[0].y);
-                        for (let s = 1; s <= steps; s++) {
-                            this.ctx.lineTo(midPoints[s].x, midPoints[s].y);
-                        }
-                        this.ctx.stroke();
-                    }
-
-                    this.ctx.restore();
+                    const bCurr = getBoundsAtTime(note, tCurr);
+                    const margin = 8;
+                    points.push({
+                        xLeft: bCurr.x + margin,
+                        xRight: bCurr.x + bCurr.width - margin,
+                        y: yCurr
+                    });
                 }
+
+                // 帯ポリゴンのパス生成
+                this.ctx.beginPath();
+                this.ctx.moveTo(points[0].xLeft, points[0].y);
+                for (let s = 1; s <= steps; s++) {
+                    this.ctx.lineTo(points[s].xLeft, points[s].y);
+                }
+                for (let s = steps; s >= 0; s--) {
+                    this.ctx.lineTo(points[s].xRight, points[s].y);
+                }
+                this.ctx.closePath();
+
+                // 鮮やかな強発光ネオングラデーション (レールの光に負けない強固なアルファ値)
+                const grad = this.ctx.createLinearGradient(0, yTail, 0, yHead);
+                if (note.type === 'slide') {
+                    grad.addColorStop(0, 'rgba(0, 240, 255, 0.95)');
+                    grad.addColorStop(0.5, 'rgba(255, 0, 220, 0.9)');
+                    grad.addColorStop(1, 'rgba(0, 240, 255, 0.95)');
+                } else {
+                    grad.addColorStop(0, 'rgba(255, 180, 0, 0.92)');
+                    grad.addColorStop(0.5, 'rgba(118, 255, 3, 0.92)');
+                    grad.addColorStop(1, 'rgba(255, 180, 0, 0.95)');
+                }
+
+                this.ctx.fillStyle = grad;
+                this.ctx.shadowColor = (note.type === 'slide') ? '#ff00e5' : '#ffaa00';
+                this.ctx.shadowBlur = note.holding ? 25 : 14;
+                this.ctx.fill();
+
+                // 帯の中央を貫く強烈な白いネオンパルス光線
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = note.holding ? 4 : 2.5;
+                this.ctx.shadowColor = '#ffffff';
+                this.ctx.shadowBlur = 15;
+                this.ctx.beginPath();
+                const midPoints = points.map(p => ({ x: (p.xLeft + p.xRight) / 2, y: p.y }));
+                this.ctx.moveTo(midPoints[0].x, midPoints[0].y);
+                for (let s = 1; s <= steps; s++) {
+                    this.ctx.lineTo(midPoints[s].x, midPoints[s].y);
+                }
+                this.ctx.stroke();
+
+                this.ctx.restore();
             }
 
             // ------------------------------------------------------------------
             // 2. ノーツの頭 (Head) / 通常タップノーツの描画
             // ------------------------------------------------------------------
-            if (!note.headHit && yHeadRaw >= this.spawnY - 20 && yHeadRaw <= this.receptorY + 40) {
+            if (!note.headHit && yHeadRaw >= this.spawnY - 40 && yHeadRaw <= this.receptorY + 50) {
                 const bHead = getBoundsAtTime(note, tHead);
                 const isOrange = (note.startLane % 2 === 0);
                 const x = bHead.x + 6;
@@ -1185,20 +1183,34 @@ class GameEngine {
             }
 
             // ------------------------------------------------------------------
-            // 3. ホールドノーツの尾 (Tail Cap) 描画
+            // 3. ホールドノーツの終端 (Tail Cap / いつまで押せばいいか一目でわかる明確なゴール) 描画
             // ------------------------------------------------------------------
             if ((note.type === 'hold' || note.type === 'slide') && note.duration > 0) {
-                if (yTail >= this.spawnY - 20 && yTail <= this.receptorY + 40) {
+                if (yTail >= this.spawnY - 40 && yTail <= this.receptorY + 40) {
                     const bTail = getBoundsAtTime(note, tTail);
-                    const tx = bTail.x + 8;
-                    const tWidth = bTail.width - 16;
-                    const tailH = 10;
+                    const tx = bTail.x + 6;
+                    const tWidth = bTail.width - 12;
+                    const tailH = 14;
 
                     this.ctx.save();
-                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-                    this.ctx.shadowColor = (note.type === 'slide') ? '#00e5ff' : '#ffaa00';
-                    this.ctx.shadowBlur = 12;
-                    this.roundRect(this.ctx, tx, yTail - tailH / 2, tWidth, tailH, 4, true, false);
+                    // 鮮やかな終端キャップ
+                    const tailGrad = this.ctx.createLinearGradient(tx, yTail - tailH/2, tx, yTail + tailH/2);
+                    tailGrad.addColorStop(0, '#ffffff');
+                    tailGrad.addColorStop(0.5, note.type === 'slide' ? '#00e5ff' : '#ffea00');
+                    tailGrad.addColorStop(1, note.type === 'slide' ? '#ff00ea' : '#ff6b00');
+
+                    this.ctx.fillStyle = tailGrad;
+                    this.ctx.shadowColor = note.type === 'slide' ? '#00ffff' : '#ffea00';
+                    this.ctx.shadowBlur = 18;
+                    this.roundRect(this.ctx, tx, yTail - tailH / 2, tWidth, tailH, 5, true, true);
+
+                    // 終端ターゲットアイコン 「⏹ END」
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.font = '900 9px Orbitron, sans-serif';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText('⏹ END', tx + tWidth / 2, yTail);
+
                     this.ctx.restore();
                 }
             }

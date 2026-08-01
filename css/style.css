@@ -326,7 +326,7 @@ html, body {
     animation: combo-bounce 0.15s ease-out;
 }
 
-/* コンボレベル連動スーパーエフェクト (Level 1: 20+, Level 2: 50+, Level 3: 100+, Level 4: 200+) */
+/* コンボレベル連動スーパーエフェクト (Level 1: 10+, Level 2: 20+, Level 3: 35+, Level 4: 50+ MAX!) */
 .combo-container.fever-level-1::before {
     border-color: #00e5ff;
     box-shadow: 0 0 25px rgba(0, 229, 255, 0.4), inset 0 0 25px rgba(0, 229, 255, 0.4);
@@ -1214,10 +1214,10 @@ body.is-embed .app-container {
    AMU tune Official Logo Banner Styles (Compact & Balanced)
    ========================================================================== */
 .header-logo-img {
-    height: 18px;
+    height: 22px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 0 6px rgba(255, 107, 0, 0.6));
+    filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.7));
     transition: transform 0.2s ease, filter 0.2s ease;
 }
 

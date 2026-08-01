@@ -119,13 +119,13 @@ class UIManager {
             this.comboDisplay.classList.remove('bounce', 'fever-level-1', 'fever-level-2', 'fever-level-3', 'fever-level-4');
             void this.comboDisplay.offsetWidth; // reflow
 
-            if (combo >= 200) {
+            if (combo >= 50) {
                 this.comboDisplay.classList.add('fever-level-4');
-            } else if (combo >= 100) {
+            } else if (combo >= 35) {
                 this.comboDisplay.classList.add('fever-level-3');
-            } else if (combo >= 50) {
-                this.comboDisplay.classList.add('fever-level-2');
             } else if (combo >= 20) {
+                this.comboDisplay.classList.add('fever-level-2');
+            } else if (combo >= 10) {
                 this.comboDisplay.classList.add('fever-level-1');
             }
 
