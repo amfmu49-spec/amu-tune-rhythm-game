@@ -829,7 +829,7 @@ class GameEngine {
         this.ctx.fillStyle = 'rgba(0, 229, 255, 0.45)';
         this.ctx.font = '700 9px Orbitron, sans-serif';
 
-        let systemStatus = "STATUS: AMU ENGINE v1.3.0";
+        let systemStatus = "STATUS: AMU ENGINE v1.3.1";
         const level = this.getComboLevel();
         if (level === 4) systemStatus = "STATUS: ULTIMATE GOD MODE ⚡";
         else if (level === 3) systemStatus = "STATUS: HYPER OVERDRIVE 🔥";
@@ -839,7 +839,7 @@ class GameEngine {
         // 画面左下の安全領域へ描画
         const hudBottomY = this.receptorY + 45;
         this.ctx.fillText(systemStatus, 12, hudBottomY);
-        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.3.0", 12, hudBottomY + 12);
+        this.ctx.fillText("AMU TUNE RHYTHM ENGINE v1.3.1", 12, hudBottomY + 12);
 
         this.ctx.restore();
     }
