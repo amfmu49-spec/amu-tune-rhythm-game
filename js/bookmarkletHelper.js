@@ -9,16 +9,31 @@ class BookmarkletHelper {
     try {
         var srt = "";
         var lyricsText = "";
-        var textNodes = document.querySelectorAll("textarea, pre, p, div, span, [class*='lyrics'], [class*='text']");
-        for(var k=0; k<textNodes.length; k++){
-            var txt = (textNodes[k].value || textNodes[k].innerText || textNodes[k].textContent || "").trim();
-            if(txt.indexOf("-->") !== -1 && txt.length > 15){ srt = txt; break; }
-            if(!lyricsText && txt.length > 30 && txt.indexOf("\\n") !== -1 && (textNodes[k].className && String(textNodes[k].className).indexOf("lyrics") !== -1)){ lyricsText = txt; }
+        
+        var copyBtn = document.querySelector('button[aria-label="Copy lyrics to clipboard"]') || document.querySelector('button[title="Copy lyrics to clipboard"]');
+        if (copyBtn && copyBtn.parentElement) {
+            var clone = copyBtn.parentElement.cloneNode(true);
+            var btns = clone.querySelectorAll('button');
+            for(var i=0; i<btns.length; i++) btns[i].remove();
+            lyricsText = (clone.innerText || clone.textContent || "").trim();
         }
-        if(!srt && !lyricsText){
+        
+        if (lyricsText && lyricsText.indexOf("-->") !== -1) {
+            srt = lyricsText;
+        }
+
+        if (!lyricsText && !srt) {
+            var textNodes = document.querySelectorAll("textarea, pre, p, div, span, [class*='lyrics'], [class*='text']");
             for(var k=0; k<textNodes.length; k++){
                 var txt = (textNodes[k].value || textNodes[k].innerText || textNodes[k].textContent || "").trim();
-                if(txt.length > 40 && txt.indexOf("\\n") !== -1 && txt.length < 1500){ lyricsText = txt; break; }
+                if(txt.indexOf("-->") !== -1 && txt.length > 15){ srt = txt; break; }
+                if(!lyricsText && txt.length > 30 && txt.indexOf("\\n") !== -1 && (textNodes[k].className && String(textNodes[k].className).indexOf("lyrics") !== -1)){ lyricsText = txt; }
+            }
+            if(!srt && !lyricsText){
+                for(var k=0; k<textNodes.length; k++){
+                    var txt = (textNodes[k].value || textNodes[k].innerText || textNodes[k].textContent || "").trim();
+                    if(txt.length > 40 && txt.indexOf("\\n") !== -1 && txt.length < 1500){ lyricsText = txt; break; }
+                }
             }
         }
         if(!srt && lyricsText){
