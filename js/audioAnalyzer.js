@@ -186,8 +186,14 @@ class AudioAnalyzer {
      * @returns {Array<{id: number, time: number, lane: number, isHold: boolean, duration: number}>}
      */
     generateChart(audioBuffer, srtEntries = [], difficulty = 'NORMAL') {
-        const beatEvents = this.detectBeats(audioBuffer, difficulty);
         const vocalEvents = SRTParser.extractVocalNoteTimings(srtEntries);
+        const hasVocals = vocalEvents.length > 0;
+        
+        // If SRT is provided, strictly follow vocal timings to respect the timestamps
+        let beatEvents = [];
+        if (!hasVocals) {
+            beatEvents = this.detectBeats(audioBuffer, difficulty);
+        }
 
         const rawNotes = [];
 
@@ -201,22 +207,22 @@ class AudioAnalyzer {
             });
         }
 
-        // 2. 音響ビートイベントの追加（難易度別の適正間引き）
-        const duplicateThreshold = (difficulty === 'EASY') ? 0.40 : (difficulty === 'NORMAL' ? 0.28 : 0.18);
-        const skipChance = { EASY: 0.50, NORMAL: 0.25, HARD: 0.10, EXPERT: 0 }[difficulty] || 0.25;
+        // 2. 音響ビートイベントの追加（ボーカルがない場合のみ）
+        if (!hasVocals) {
+            const duplicateThreshold = (difficulty === 'EASY') ? 0.40 : (difficulty === 'NORMAL' ? 0.28 : 0.18);
+            const skipChance = { EASY: 0.50, NORMAL: 0.25, HARD: 0.10, EXPERT: 0 }[difficulty] || 0.25;
 
-        for (const b of beatEvents) {
-            // 難易度による適度な間引き
-            if (Math.random() < skipChance) continue;
-
-            const duplicate = rawNotes.some(n => Math.abs(n.time - b.time) < duplicateThreshold);
-            if (!duplicate) {
-                rawNotes.push({
-                    time: b.time,
-                    isHold: false,
-                    duration: 0,
-                    type: 'beat'
-                });
+            for (const b of beatEvents) {
+                if (Math.random() < skipChance) continue;
+                const duplicate = rawNotes.some(n => Math.abs(n.time - b.time) < duplicateThreshold);
+                if (!duplicate) {
+                    rawNotes.push({
+                        time: b.time,
+                        isHold: false,
+                        duration: 0,
+                        type: 'beat'
+                    });
+                }
             }
         }
 

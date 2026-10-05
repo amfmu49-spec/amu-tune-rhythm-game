@@ -640,11 +640,11 @@ class GameEngine {
             if (this.lyrimoColorBurst === undefined) this.lyrimoColorBurst = 0;
             this.lyrimoColorBurst = Math.max(0, this.lyrimoColorBurst - delta * 2.5); // 約0.4秒で減衰
             
-            // 普段はグレー(100%)で半透明(0.3)、ヒット時にカラー(0%)で明るく(1.0)なる
+            // 普段はグレー(100%)で少し薄め(0.85)、ヒット時にカラー(0%)で眩しく(1.5)なる
             const gray = Math.round(100 - (this.lyrimoColorBurst * 100)); 
-            const op = (0.25 + (this.lyrimoColorBurst * 0.75)).toFixed(2);
-            const bright = (0.7 + (this.lyrimoColorBurst * 0.8)).toFixed(2);
-            const blur = Math.round((1 - this.lyrimoColorBurst) * 2); // 普段は少しぼやける
+            const op = (0.85 + (this.lyrimoColorBurst * 0.15)).toFixed(2); // 最低でも0.85を確保して文字をクッキリ見せる
+            const bright = (0.9 + (this.lyrimoColorBurst * 0.6)).toFixed(2);
+            const blur = Math.round((1 - this.lyrimoColorBurst) * 1); // ぼかしも弱める(1px)
             
             this.lyrimoCanvas.style.filter = `grayscale(${gray}%) opacity(${op}) brightness(${bright}) blur(${blur}px)`;
             
