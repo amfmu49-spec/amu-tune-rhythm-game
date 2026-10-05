@@ -381,6 +381,43 @@ class GameEngine {
         }
     }
 
+    playHitSound() {
+        try {
+            if (!this.audioAnalyzer || !this.audioAnalyzer.audioCtx) return;
+            const ctx = this.audioAnalyzer.audioCtx;
+            if (ctx.state === 'suspended') return;
+            
+            // 短い高周波ノイズ（タンバリンのようなシャン！という音）を作成
+            const bufferSize = ctx.sampleRate * 0.05; // 50ms
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                // 高周波ノイズ
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.015));
+            }
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            // 軽くフィルターをかけて金属音っぽくする
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 7000;
+            
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.8, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            noise.start(ctx.currentTime);
+        } catch(e) {
+            console.warn('Failed to play hit sound', e);
+        }
+    }
+
     // ==========================================================================
     // 判定ロジック
     // ==========================================================================
@@ -414,7 +451,6 @@ class GameEngine {
             result = 'GOOD';
             scoreAdd = 400;
         }
-
         if (result) {
             if (targetNote.type === 'tap') {
                 targetNote.hit = true;
@@ -427,6 +463,7 @@ class GameEngine {
                 targetNote.lastTickTime = currentTime;
             }
 
+            this.playHitSound();
             this.combo++;
             if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
