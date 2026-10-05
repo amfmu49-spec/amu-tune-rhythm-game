@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AMU TUNE - Cyber Neon Theme & Rhythm Game Styling
    ========================================================================== */
 
@@ -40,7 +40,8 @@ html, body {
     display: flex;
     flex-direction: column;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
     max-width: 480px; /* 9:16 スマートフォン縦画面の標準幅 */
     margin: 0 auto;
     background: radial-gradient(circle at center, #1b1d28 0%, #08090d 100%);
@@ -752,7 +753,7 @@ html, body {
     transform: translateX(-50%);
     width: 100%;
     max-width: 480px;
-    height: 105px;
+    height: 105px; padding-bottom: env(safe-area-inset-bottom);
     display: flex;
     justify-content: space-between;
     gap: 4px;
