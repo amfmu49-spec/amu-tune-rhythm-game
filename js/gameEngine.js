@@ -361,6 +361,7 @@ class GameEngine {
         if (this.activeKeys[lane]) return; // 重複入力ガード
         this.activeKeys[lane] = true;
         this.hapticFeedback();
+        this.playHitSound();
         this.checkHit(lane);
 
         const btn = document.getElementById(`btn-lane-${lane}`);
@@ -470,7 +471,6 @@ class GameEngine {
                 targetNote.lastTickTime = currentTime;
             }
 
-            this.playHitSound();
             this.combo++;
             if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
