@@ -45,6 +45,7 @@ class GameEngine {
 
         // 判定ポップアップ表示用配列
         this.judgments = [];
+        this.lyricMotions = []; // リリックモーション用配列
         // カウントダウンタイマー (3, 2, 1, 0)
         this.countdown = 0;
         this.isCountingDown = false;
@@ -73,7 +74,7 @@ class GameEngine {
     // ==========================================================================
     // 譜面 ＆ 音声設定
     // ==========================================================================
-    setChartAndAudio(chart, audioBuffer, difficulty = 'NORMAL') {
+    setChartAndAudio(chart, audioBuffer, difficulty = 'NORMAL', srtText = null) {
         this.chart = chart.map(n => ({
             ...n,
             type: n.type || (n.isHold ? 'hold' : 'tap'),
@@ -90,6 +91,27 @@ class GameEngine {
         }));
         this.audioBuffer = audioBuffer;
         this.difficulty = difficulty;
+        
+        // Initialize Lyrimo Engine if available
+        if (srtText && window.J) {
+            this.lyrimoProject = J.defaultProject();
+            this.lyrimoProject.lyrics = srtText;
+            const omakase = J.omakase(this.lyrimoProject);
+            Object.assign(this.lyrimoProject, omakase);
+            
+            this.lyrimoPlan = J.plan(this.lyrimoProject, { duration: audioBuffer ? audioBuffer.duration : 600 });
+            
+            if (!this.lyrimoRenderer) {
+                this.lyrimoRenderer = new J.Renderer();
+            }
+            this.lyrimoCanvas = document.getElementById('lyrimo-canvas');
+            if (this.lyrimoCanvas) {
+                this.lyrimoCanvas.width = this.canvas.width;
+                this.lyrimoCanvas.height = this.canvas.height;
+                this.lyrimoCtx = this.lyrimoCanvas.getContext('2d');
+            }
+        }
+        
         this.resetGameStats();
     }
 
@@ -414,6 +436,10 @@ class GameEngine {
             this.hp = Math.min(100, this.hp + 2);
             this.counts[result.toLowerCase()]++;
 
+            if (targetNote.text && targetNote.text.trim()) {
+                this.addLyricMotion(targetNote.text, lane);
+            }
+
             this.createHitParticles(lane, result);
             this.addJudgmentPopup(result, lane, this.isSurvivalMode ? 0 : scoreAdd);
 
@@ -587,6 +613,86 @@ class GameEngine {
         });
     }
 
+    addLyricMotion(text, lane) {
+        // Lyrimo is now handling background lyric motion automatically based on time!
+        // We trigger a color burst effect on the entire Lyrimo canvas when tapped.
+        this.lyrimoColorBurst = 1.0;
+        
+        // Fallback or extra pop effect for hit
+        const bounds = this.getLaneBounds(lane);
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = this.receptorY - 60;
+
+        this.lyricMotions.push({
+            text: text,
+            x: centerX + (Math.random() * 20 - 10),
+            y: centerY,
+            vx: (Math.random() - 0.5) * 80,
+            vy: -120 - Math.random() * 50,
+            life: 0.8, // Make it faster so it doesn't overlap too much with Lyrimo
+            scale: 0.5
+        });
+    }
+
+    updateAndDrawLyricMotions(delta) {
+        // Handle CSS Filter Burst for Lyrimo Canvas
+        if (this.lyrimoCanvas) {
+            if (this.lyrimoColorBurst === undefined) this.lyrimoColorBurst = 0;
+            this.lyrimoColorBurst = Math.max(0, this.lyrimoColorBurst - delta * 2.5); // 約0.4秒で減衰
+            
+            // 普段はグレー(100%)で半透明(0.3)、ヒット時にカラー(0%)で明るく(1.0)なる
+            const gray = Math.round(100 - (this.lyrimoColorBurst * 100)); 
+            const op = (0.25 + (this.lyrimoColorBurst * 0.75)).toFixed(2);
+            const bright = (0.7 + (this.lyrimoColorBurst * 0.8)).toFixed(2);
+            const blur = Math.round((1 - this.lyrimoColorBurst) * 2); // 普段は少しぼやける
+            
+            this.lyrimoCanvas.style.filter = `grayscale(${gray}%) opacity(${op}) brightness(${bright}) blur(${blur}px)`;
+            
+            // 少しだけバウンドさせる
+            const scale = 1.0 + (this.lyrimoColorBurst * 0.05);
+            this.lyrimoCanvas.style.transform = `scale(${scale})`;
+        }
+
+        // Draw Lyrimo frame
+        if (this.lyrimoRenderer && this.lyrimoPlan && this.lyrimoCtx) {
+            const t = this.getCurrentTime();
+            // Clear canvas for Lyrimo transparent rendering
+            this.lyrimoCtx.clearRect(0, 0, this.lyrimoCanvas.width, this.lyrimoCanvas.height);
+            try {
+                this.lyrimoRenderer.frame(this.lyrimoCtx, this.lyrimoPlan, t, {
+                    scale: this.lyrimoCanvas.width / this.lyrimoPlan.W,
+                    transparent: true
+                });
+            } catch(e) {}
+        }
+
+        // Draw basic particle pop
+        for (let i = this.lyricMotions.length - 1; i >= 0; i--) {
+            const m = this.lyricMotions[i];
+            m.life -= delta * 2.0;
+            if (m.life <= 0) {
+                this.lyricMotions.splice(i, 1);
+                continue;
+            }
+
+            m.x += m.vx * delta;
+            m.y += m.vy * delta;
+            m.vy += 180 * delta; 
+            m.scale += delta * 1.0;
+
+            this.ctx.save();
+            this.ctx.globalAlpha = Math.max(0, Math.min(1, m.life));
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.shadowColor = '#00e5ff';
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = `900 ${Math.floor(24 * m.scale)}px 'Noto Sans JP', sans-serif`;
+            this.ctx.fillText(m.text, m.x, m.y);
+            this.ctx.restore();
+        }
+    }
+
     getComboLevel() {
         if (this.combo >= 50) return 4; // ULTIMATE MAX GOD MODE (50コンボで最高潮MAX!)
         if (this.combo >= 35) return 3; // HYPER OVERDRIVE
@@ -709,6 +815,9 @@ class GameEngine {
 
         // 5. 判定文字ポップアップ描画 (PERFECT, GREAT, GOOD, MISS)
         this.updateAndDrawJudgments(delta);
+
+        // リリックモーション描画
+        this.updateAndDrawLyricMotions(delta);
 
         // 6. カウントダウン表示 (3, 2, 1, GO!)
         this.drawCountdown();

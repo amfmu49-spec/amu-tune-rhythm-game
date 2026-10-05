@@ -48,7 +48,7 @@
             </div>
             <div class="header-center" style="display: flex; flex-direction: column; align-items: center;">
                 <img src="assets/amu-tune-logo-banner.png" alt="AMU tune" class="header-logo-img">
-                <span class="app-version-tag" style="font-size: 0.60rem; color: #00e5ff; font-weight: 700; font-family: var(--font-heading); letter-spacing: 0.5px; margin-top: 1px;">v1.9.5</span>
+                <span class="app-version-tag" style="font-size: 0.60rem; color: #00e5ff; font-weight: 700; font-family: var(--font-heading); letter-spacing: 0.5px; margin-top: 1px;">v2.1.0</span>
             </div>
             <div class="header-right">
                 <button class="settings-btn" id="settings-toggle-btn">🔔</button>
@@ -59,7 +59,9 @@
         <main class="game-viewport">
             <!-- 🌌 背景ジャケット画像カバー (薄いサイバーオーバーレイ) -->
             <div id="game-bg-cover" class="game-bg-cover"></div>
-            <canvas id="game-canvas"></canvas>
+            <!-- リリモキャンバス -->
+            <canvas id="lyrimo-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></canvas>
+            <canvas id="game-canvas" style="position: relative; z-index: 2;"></canvas>
 
             <!-- 3. 上部HUDパネル (曲名 ＆ スコアの2つのみ・横1列配置) -->
             <div class="top-panels-wrapper">
@@ -139,7 +141,7 @@
             <!-- 🎨 公式 AMU tune 大迫力ロゴバナー ＆ バージョン -->
             <div class="modal-banner-wrapper">
                 <img src="assets/amu-tune-logo-banner.png" alt="AMU tune" class="modal-banner-img">
-                <span style="font-size: 0.68rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.4); padding: 2px 12px; border-radius: 12px; letter-spacing: 0.5px; margin-top: 6px;">v1.9.6</span>
+                <span style="font-size: 0.68rem; color: #00e5ff; font-weight: 900; font-family: var(--font-heading); background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.4); padding: 2px 12px; border-radius: 12px; letter-spacing: 0.5px; margin-top: 6px;">v2.1.0</span>
             </div>
 
             <div class="modal-body">
@@ -150,6 +152,17 @@
                         <span style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">(無料・登録不要)</span>
                     </button>
                     <textarea id="bookmarklet-code" readonly style="display: none;"></textarea>
+                </div>
+
+                <!-- 手動アップロード枠追加 -->
+                <div style="margin-bottom: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 12px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #00e5ff; margin-bottom: 6px;">📂 MP3と歌詞を手動で読み込む</div>
+                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 2px;">① MP3ファイルを選択</label>
+                    <input type="file" id="mp3-input" accept=".mp3,.wav,.m4a" style="font-size: 0.75rem; color: #fff; width: 100%; margin-bottom: 8px;">
+                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 2px;">② SRT(歌詞)テキストを貼り付け</label>
+                    <textarea id="srt-text-input" placeholder="ここにブックマークレットでコピーしたSRTを貼り付け" style="width: 100%; height: 50px; font-size: 0.7rem; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 4px; resize: none; margin-bottom: 6px;"></textarea>
+                    <button id="manual-apply-btn" style="width: 100%; padding: 6px; font-size: 0.8rem; font-weight: bold; background: #00e5ff; border: none; border-radius: 6px; color: #000; cursor: pointer;">適用して準備完了</button>
+                    <div id="manual-status" style="font-size: 0.7rem; color: #76ff03; margin-top: 4px; text-align: center;"></div>
                 </div>
 
                 <!-- 🕒 最近遊んだ曲 (プレイ履歴) セクション -->
@@ -211,11 +224,12 @@
     <div id="toast-notification" class="toast-notification"></div>
 
     <!-- JSモジュールロード -->
-    <script src="js/srtParser.js?v=2.0.0"></script>
-    <script src="js/audioAnalyzer.js?v=2.0.0"></script>
-    <script src="js/gameEngine.js?v=2.0.0"></script>
-    <script src="js/uiManager.js?v=2.0.0"></script>
-    <script src="js/bookmarkletHelper.js?v=2.0.0"></script>
-    <script src="js/app.js?v=2.0.0"></script>
+    <script src="js/srtParser.js?v=2.1.0"></script>
+    <script src="js/audioAnalyzer.js?v=2.1.0"></script>
+    <script src="js/lyrimo_core.js?v=2.1.0"></script>
+    <script src="js/gameEngine.js?v=2.1.0"></script>
+    <script src="js/uiManager.js?v=2.1.0"></script>
+    <script src="js/bookmarkletHelper.js?v=2.1.0"></script>
+    <script src="js/app.js?v=2.1.0"></script>
 </body>
 </html>

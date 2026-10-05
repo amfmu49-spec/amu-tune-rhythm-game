@@ -257,17 +257,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // SRTファイル入力
-    document.getElementById('srt-input')?.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                uploadedSrtText = await file.text();
-                const srtStatus = document.getElementById('srt-status');
-                if (srtStatus) srtStatus.textContent = `SRT: ${file.name} ✔`;
-            } catch (err) {
-                alert('SRTファイルの読み込みに失敗しました: ' + err.message);
-            }
+    // 手動一括適用ボタン (MP3 + SRTテキスト)
+    document.getElementById('manual-apply-btn')?.addEventListener('click', async () => {
+        const mp3File = document.getElementById('mp3-input')?.files[0];
+        const srtText = document.getElementById('srt-text-input')?.value;
+        const statusEl = document.getElementById('manual-status');
+        
+        if (!mp3File) {
+            alert('① MP3ファイルを選択してください。');
+            return;
+        }
+        if (!srtText || srtText.trim() === '') {
+            alert('② ブックマークレットで取得したSRT(歌詞)を貼り付けてください。');
+            return;
+        }
+
+        try {
+            if(statusEl) statusEl.textContent = '読み込み中...';
+            
+            // MP3をデコード
+            const arrayBuffer = await mp3File.arrayBuffer();
+            uploadedMp3Buffer = await audioAnalyzer.decodeAudio(arrayBuffer);
+            
+            const id3Cover = AudioAnalyzer.extractCoverArtFromBuffer(arrayBuffer);
+            if (id3Cover) setSongCoverArt(id3Cover);
+
+            const titleDisp = document.getElementById('song-title-display');
+            if (titleDisp) titleDisp.textContent = mp3File.name.replace(/\.[^/.]+$/, "");
+            
+            // SRTをセット
+            uploadedSrtText = srtText.trim();
+            
+            if(statusEl) statusEl.textContent = 'MP3 & SRT 読み込み完了！プレイスタートを押してください ✔';
+        } catch (err) {
+            alert('ファイルの読み込みに失敗しました: ' + err.message);
+            if(statusEl) statusEl.textContent = '読み込み失敗 ❌';
         }
     });
 
@@ -288,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const srtEntries = uploadedSrtText ? SRTParser.parse(uploadedSrtText) : [];
         const chart = audioAnalyzer.generateChart(uploadedMp3Buffer, srtEntries, diff);
 
-        gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff);
+        gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff, uploadedSrtText);
         ui.hideLoadModal();
         gameEngine.play();
     });
@@ -626,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const srtEntries = uploadedSrtText ? SRTParser.parse(uploadedSrtText) : [];
                         const chart = audioAnalyzer.generateChart(uploadedMp3Buffer, srtEntries, diff);
-                        gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff);
+                        gameEngine.setChartAndAudio(chart, uploadedMp3Buffer, diff, uploadedSrtText);
                         ui.hideLoadModal();
                         gameEngine.play();
                     } catch (decodeErr) {
