@@ -387,29 +387,36 @@ class GameEngine {
             const ctx = this.audioAnalyzer.audioCtx;
             if (ctx.state === 'suspended') return;
             
-            // 短い高周波ノイズ（タンバリンのようなシャン！という音）を作成
-            const bufferSize = ctx.sampleRate * 0.05; // 50ms
+            // タンバリンの「シャン！」という音を作成（長めのノイズと金属的なフィルター）
+            const bufferSize = ctx.sampleRate * 0.2; // 200ms
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) {
-                // 高周波ノイズ
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.015));
+                // 指数減衰させたホワイトノイズ
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.05));
             }
             
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
             
-            // 軽くフィルターをかけて金属音っぽくする
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'highpass';
-            filter.frequency.value = 7000;
+            // バンドパスフィルターで金属的な共鳴（シャンという響き）を作る
+            const filter1 = ctx.createBiquadFilter();
+            filter1.type = 'bandpass';
+            filter1.frequency.value = 6500;
+            filter1.Q.value = 1.8;
+            
+            // ハイパスフィルターで低域の濁りを完全にカット
+            const filter2 = ctx.createBiquadFilter();
+            filter2.type = 'highpass';
+            filter2.frequency.value = 5000;
             
             const gain = ctx.createGain();
-            gain.gain.setValueAtTime(0.8, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+            gain.gain.setValueAtTime(1.5, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
             
-            noise.connect(filter);
-            filter.connect(gain);
+            noise.connect(filter1);
+            filter1.connect(filter2);
+            filter2.connect(gain);
             gain.connect(ctx.destination);
             
             noise.start(ctx.currentTime);
