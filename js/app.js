@@ -151,46 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     };
 
-    // 🌐「この曲をWEBサイトに埋め込む」ワンタップコピーボタン
-    document.getElementById('embed-code-copy-btn')?.addEventListener('click', (e) => {
-        const btn = e.currentTarget;
-        const baseUrl = window.location.origin + window.location.pathname;
-        const activeDiff = ui.selectedDifficulty || 'NORMAL';
-        let songParam = '';
-        let songName = '選択中楽曲';
 
-        if (currentSunoUuid) {
-            songParam = `suno_id=${currentSunoUuid}`;
-            songName = document.getElementById('song-title-display')?.textContent || 'Suno楽曲';
-        } else {
-            const selectedDemoCard = document.querySelector('.demo-song-card.selected');
-            const demoKey = selectedDemoCard ? selectedDemoCard.getAttribute('data-demo') : 'suno_sunrise';
-            songParam = `song=${demoKey}`;
-            songName = selectedDemoCard ? (selectedDemoCard.querySelector('.demo-title')?.textContent || demoKey) : 'Suno Sunrise';
-        }
-
-        const embedUrl = `${baseUrl}?${songParam}&diff=${activeDiff}&embed=true&autostart=true`;
-        const iframeCode = `<iframe src="${embedUrl}" width="420" height="700" style="border:none; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);" allow="autoplay; haptic-feedback"></iframe>`;
-
-        const isCopied = copyTextToClipboard(iframeCode);
-        if (isCopied) {
-            showToast(`⚡ 「${songName}」の埋め込みHTMLコードをコピーしました！`);
-            if (btn) {
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✔ クリップボードにコピー完了！';
-                btn.style.background = 'rgba(118, 255, 3, 0.25)';
-                btn.style.borderColor = '#76ff03';
-                btn.style.color = '#76ff03';
-
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.background = 'rgba(0, 229, 255, 0.12)';
-                    btn.style.borderColor = 'rgba(0, 229, 255, 0.4)';
-                    btn.style.color = '#00e5ff';
-                }, 2500);
-            }
-        }
-    });
 
     // ⚡ クリップボードからワンタップ取り込みボタン
     document.getElementById('clipboard-import-btn')?.addEventListener('click', async () => {
@@ -609,15 +570,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const progressInterval = setInterval(() => {
             if (fakePct < 85) {
                 fakePct += (85 - fakePct) * 0.05 + 0.5;
-                if (startBtn) startBtn.innerHTML = `⏳ ダウンロード中 ${Math.round(fakePct)}%`;
+                if (startBtn) startBtn.innerHTML = `⏳ 楽曲を読み込み中 ${Math.round(fakePct)}%`;
             }
         }, 300);
 
         try {
-            // フェーズ1: MP3のダウンロードのみ（AudioContextは使わない）
+            // フェーズ1: MP3のロード（AudioContextは使わない）
             const rawArrayBuffer = await fetchWithProxy(mp3Url);
             clearInterval(progressInterval);
-            if (startBtn) startBtn.innerHTML = '⏳ ダウンロード完了！';
+            if (startBtn) startBtn.innerHTML = '⏳ 読み込み完了！';
 
             // フェーズ2: ユーザーのタップをトリガーにしてデコード＆開始
             // （iOSのAudioContext制限のため、必ずユーザーのジェスチャーが必要）
