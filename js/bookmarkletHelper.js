@@ -1,12 +1,12 @@
-/**
- * Bookmarklet Helper v12 - UUID・曲名・アーティスト・カバー画像の一括超強固抽出方式
+﻿/**
+ * Bookmarklet Helper v13 - UUID・曲名・アーティスト・カバー画像の一括超強固抽出方式
  */
 class BookmarkletHelper {
     static getBookmarkletCode() {
         const target = window.location.origin + window.location.pathname.replace(/index\.html.*$/, '') + 'index.html';
 
         const fn = `(async function(){
-    const VER="AMU-TUNE-v2.2.0";
+    const VER="AMU-TUNE-v2.3.0";
     function getCookie(n){let e=\`; \${document.cookie}\`.split(\`; \${n}=\`);return e.length>=2?e.pop().split(";").shift():null}
     function getToken(){return getCookie("__session")||localStorage.getItem("clerk-db-jwt")||localStorage.getItem("__session")||""}
     function cleanText(t){return(t||"").replace(/\\r/g,"").replace(/[\\u200B-\\u200D\\u2060\\uFEFF]/g,"").trim()}
