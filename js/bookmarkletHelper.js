@@ -5,47 +5,100 @@ class BookmarkletHelper {
     static getBookmarkletCode() {
         const target = window.location.origin + window.location.pathname.replace(/index\.html.*$/, '') + 'index.html';
 
-        const fn = `(function(){
+        const fn = `(async function(){
     try {
         var srt = "";
         var lyricsText = "";
         
-        var copyBtn = document.querySelector('button[aria-label="Copy lyrics to clipboard"]') || document.querySelector('button[title="Copy lyrics to clipboard"]');
-        if (copyBtn && copyBtn.parentElement) {
-            var clone = copyBtn.parentElement.cloneNode(true);
-            var btns = clone.querySelectorAll('button');
-            for(var i=0; i<btns.length; i++) btns[i].remove();
-            lyricsText = (clone.innerText || clone.textContent || "").trim();
+        var songId=null;
+        var pm=window.location.pathname.match(/\\/song\\/([a-f0-9\\-]+)/i);
+        if(pm){songId=pm[1]}
+        else{
+            var searchParams=new URLSearchParams(window.location.search);
+            songId=searchParams.get("song")||searchParams.get("id");
+        }
+        if(!songId){
+            var audioEl=document.querySelector('audio[src*="suno.ai"], audio[src*="cdn1"]');
+            if(audioEl&&audioEl.src){
+                var m=audioEl.src.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+                if(m)songId=m[1];
+            }
         }
         
-        if (lyricsText && lyricsText.indexOf("-->") !== -1) {
-            srt = lyricsText;
+        if(songId) {
+            var getCookie = function(n){var e=("; "+document.cookie).split("; "+n+"=");return e.length>=2?e.pop().split(";").shift():null};
+            var token = getCookie("__session")||localStorage.getItem("clerk-db-jwt")||localStorage.getItem("__session")||"";
+            var headers = token ? {Authorization:"Bearer "+token} : {};
+            
+            try {
+                var res = await fetch("https://studio-api.prod.suno.com/api/gen/"+songId+"/aligned_lyrics/v2/", {headers: headers});
+                if (res.ok) {
+                    var json = await res.json();
+                    var raw = json.aligned_lyrics || (json.data && json.data.aligned_lyrics) || [];
+                    if(Array.isArray(raw) && raw.length > 0){
+                        var idx = 1;
+                        for (var i = 0; i < raw.length; i++) {
+                            var l = raw[i];
+                            var text = (l.text || l.word || "").replace(/\\r/g, "").trim();
+                            if (!text) continue;
+                            
+                            var start = parseFloat(l.start_s || l.start || 0);
+                            var end = parseFloat(l.end_s || l.end || start + 2.0);
+                            
+                            var formatTime = function(t){
+                                var h = Math.floor(t/3600);
+                                var m = Math.floor((t%3600)/60);
+                                var s = Math.floor(t%60);
+                                var ms = Math.floor((t%1)*1000);
+                                return (h<10?"0"+h:h) + ":" + (m<10?"0"+m:m) + ":" + (s<10?"0"+s:s) + "," + (ms<10?"00"+ms:(ms<100?"0"+ms:ms));
+                            };
+                            
+                            srt += idx + "\\n" + formatTime(start) + " --> " + formatTime(end) + "\\n" + text + "\\n\\n";
+                            idx++;
+                        }
+                    }
+                }
+            } catch(e) { console.warn("Suno API Error:", e); }
         }
-
-        if (!lyricsText && !srt) {
-            var textNodes = document.querySelectorAll("textarea, pre, p, div, span, [class*='lyrics'], [class*='text']");
-            for(var k=0; k<textNodes.length; k++){
-                var txt = (textNodes[k].value || textNodes[k].innerText || textNodes[k].textContent || "").trim();
-                if(txt.indexOf("-->") !== -1 && txt.length > 15){ srt = txt; break; }
-                if(!lyricsText && txt.length > 30 && txt.indexOf("\\n") !== -1 && (textNodes[k].className && String(textNodes[k].className).indexOf("lyrics") !== -1)){ lyricsText = txt; }
+        
+        if (!srt) {
+            var copyBtn = document.querySelector('button[aria-label="Copy lyrics to clipboard"]') || document.querySelector('button[title="Copy lyrics to clipboard"]');
+            if (copyBtn && copyBtn.parentElement) {
+                var clone = copyBtn.parentElement.cloneNode(true);
+                var btns = clone.querySelectorAll('button');
+                for(var i=0; i<btns.length; i++) btns[i].remove();
+                lyricsText = (clone.innerText || clone.textContent || "").trim();
             }
-            if(!srt && !lyricsText){
+            
+            if (lyricsText && lyricsText.indexOf("-->") !== -1) {
+                srt = lyricsText;
+            }
+
+            if (!lyricsText && !srt) {
+                var textNodes = document.querySelectorAll("textarea, pre, p, div, span, [class*='lyrics'], [class*='text']");
                 for(var k=0; k<textNodes.length; k++){
                     var txt = (textNodes[k].value || textNodes[k].innerText || textNodes[k].textContent || "").trim();
-                    if(txt.length > 40 && txt.indexOf("\\n") !== -1 && txt.length < 1500){ lyricsText = txt; break; }
+                    if(txt.indexOf("-->") !== -1 && txt.length > 15){ srt = txt; break; }
+                    if(!lyricsText && txt.length > 30 && txt.indexOf("\\n") !== -1 && (textNodes[k].className && String(textNodes[k].className).indexOf("lyrics") !== -1)){ lyricsText = txt; }
+                }
+                if(!srt && !lyricsText){
+                    for(var k=0; k<textNodes.length; k++){
+                        var txt = (textNodes[k].value || textNodes[k].innerText || textNodes[k].textContent || "").trim();
+                        if(txt.length > 40 && txt.indexOf("\\n") !== -1 && txt.length < 1500){ lyricsText = txt; break; }
+                    }
                 }
             }
-        }
-        if(!srt && lyricsText){
-            var lines = lyricsText.split("\\n").filter(function(l){ return l.trim().length > 0; });
-            var sec = 2.0;
-            for(var l=0; l<lines.length; l++){
-                var formatTime = function(s){
-                    var m = Math.floor(s/60); var rs = Math.floor(s%60);
-                    return "00:" + (m<10?"0"+m:m) + ":" + (rs<10?"0"+rs:rs) + ",000";
-                };
-                srt += (l+1) + "\\n" + formatTime(sec) + " --> " + formatTime(sec + 3.0) + "\\n" + lines[l].trim() + "\\n\\n";
-                sec += 3.8;
+            if(!srt && lyricsText){
+                var lines = lyricsText.split("\\n").filter(function(l){ return l.trim().length > 0; });
+                var sec = 2.0;
+                for(var l=0; l<lines.length; l++){
+                    var formatTime = function(s){
+                        var m = Math.floor(s/60); var rs = Math.floor(s%60);
+                        return "00:" + (m<10?"0"+m:m) + ":" + (rs<10?"0"+rs:rs) + ",000";
+                    };
+                    srt += (l+1) + "\\n" + formatTime(sec) + " --> " + formatTime(sec + 3.0) + "\\n" + lines[l].trim() + "\\n\\n";
+                    sec += 3.8;
+                }
             }
         }
         if(!srt){
